@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="IFPRO Risk Command Center — dashboard risiko eksekutif BOD" />
+  <title>IFPRO Risk Command Center</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brandmark">IF</span><div><strong>IFPRO</strong><small>Risk Command Center</small></div></div>
+    <nav>
+      <button class="nav active" data-view="overview"><span>◫</span> Executive Overview</button>
+      <button class="nav" data-view="register"><span>≡</span> Risk Register</button>
+      <button class="nav" data-view="mitigation"><span>✓</span> Mitigation Monitor</button>
+      <button class="nav" data-view="kri"><span>⌁</span> Key Risk Indicators</button>
+    </nav>
+    <div class="sidebar-foot"><small>ENTERPRISE RISK MANAGEMENT</small><strong>Reporting period</strong><span>September 2026</span></div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="menu" aria-label="Buka menu">☰</button>
+      <div><p class="eyebrow">BOARD OF DIRECTORS · CONFIDENTIAL</p><h1>Enterprise Risk Overview</h1><p class="subtitle">Posisi risiko perusahaan dan prioritas keputusan manajemen</p></div>
+      <div class="header-actions"><div class="updated"><span class="live"></span><div><small>Data diperbarui</small><strong>15 Sep 2026 · 08:30</strong></div></div><button class="icon-btn" title="Notifikasi">♢<b>3</b></button><div class="avatar">MS</div></div>
+    </header>
+
+    <section class="filters">
+      <label>Periode<select id="period"><option>September 2026</option><option>Agustus 2026</option><option>Juli 2026</option></select></label>
+      <label>Direktorat<select id="directorate"><option value="all">Semua Direktorat</option><option>Operasional</option><option>Komersial</option><option>Keuangan</option><option>Human Capital</option><option>Teknologi Informasi</option></select></label>
+      <label>Kategori<select id="category"><option value="all">Semua Kategori</option><option>Strategis</option><option>Operasional</option><option>Keuangan</option><option>Kepatuhan</option><option>Teknologi</option></select></label>
+      <button class="ghost" id="reset">↻ Reset</button><button class="primary" id="export">⇩ Executive Brief</button>
+    </section>
+
+    <div id="overview" class="view active-view">
+      <section class="alert"><div class="alert-icon">!</div><div><strong>3 risiko memerlukan keputusan BOD</strong><p>Eksposur kritis meningkat pada keamanan siber dan pencapaian okupansi Sosoro Mall.</p></div><button id="showCritical">Tinjau sekarang →</button></section>
+
+      <section class="kpis">
+        <article class="kpi"><div class="kpi-top"><span>Total Risiko Aktif</span><i class="blue">◎</i></div><strong id="totalRisk">42</strong><p><b class="down">↓ 4</b> dari bulan lalu</p><div class="spark blue-spark"></div></article>
+        <article class="kpi"><div class="kpi-top"><span>Risiko Kritis</span><i class="red">!</i></div><strong id="criticalRisk">6</strong><p><b class="up">↑ 2</b> perlu perhatian</p><div class="spark red-spark"></div></article>
+        <article class="kpi"><div class="kpi-top"><span>Residual Exposure</span><i class="amber">◆</i></div><strong>Rp18,6 M</strong><p><b class="down">↓ 8,4%</b> pasca mitigasi</p><div class="spark amber-spark"></div></article>
+        <article class="kpi"><div class="kpi-top"><span>Mitigasi Tepat Waktu</span><i class="green">✓</i></div><strong>78%</strong><p><b class="up">11 aksi</b> melewati target</p><div class="progress"><span style="width:78%"></span></div></article>
+      </section>
+
+      <section class="grid-main">
+        <article class="panel heatmap-panel"><div class="panel-head"><div><h2>Enterprise Risk Heatmap</h2><p>Distribusi inherent risk · klik sel untuk melihat risiko</p></div><span class="tag">LIKELIHOOD × IMPACT</span></div>
+          <div class="heatmap-wrap"><div class="axis-y">DAMPAK →</div><div class="heatmap" id="heatmap"></div><div class="axis-x">KEMUNGKINAN →</div></div>
+          <div class="legend"><span><i class="l low"></i>Rendah</span><span><i class="l moderate"></i>Moderat</span><span><i class="l high"></i>Tinggi</span><span><i class="l extreme"></i>Ekstrem</span></div>
+        </article>
+        <article class="panel appetite"><div class="panel-head"><div><h2>Risk Appetite Status</h2><p>Eksposur terhadap toleransi BOD</p></div><button class="dots">•••</button></div>
+          <div class="donut-wrap"><div class="donut"><div><strong>71%</strong><span>Dalam appetite</span></div></div></div>
+          <div class="appetite-list"><div><span><i class="dot green-bg"></i>Dalam batas</span><b>30</b></div><div><span><i class="dot amber-bg"></i>Mendekati batas</span><b>7</b></div><div><span><i class="dot red-bg"></i>Melebihi batas</span><b>5</b></div></div>
+          <div class="callout"><span>⚑</span><p><strong>5 risiko melampaui appetite</strong><br>Wajib memiliki treatment plan disetujui BOD.</p></div>
+        </article>
+      </section>
+
+      <section class="grid-secondary">
+        <article class="panel"><div class="panel-head"><div><h2>Top Enterprise Risks</h2><p>Urutan berdasarkan residual score</p></div><button class="link" data-jump="register">Lihat semua →</button></div><div class="risk-list" id="topRisks"></div></article>
+        <article class="panel"><div class="panel-head"><div><h2>Exposure Trend</h2><p>Pergerakan inherent vs residual score</p></div><span class="tag">6 BULAN</span></div><div class="chart-legend"><span><i class="line navy"></i>Inherent</span><span><i class="line teal"></i>Residual</span><span><i class="dash"></i>Appetite</span></div><div class="linechart" id="trendChart"></div></article>
+      </section>
+
+      <section class="grid-secondary bottom">
+        <article class="panel"><div class="panel-head"><div><h2>Mitigation Performance</h2><p>Status 50 rencana penanganan risiko</p></div></div><div class="bar-row"><span>Selesai</span><div><i style="width:46%" class="green-bg"></i></div><b>23</b></div><div class="bar-row"><span>On track</span><div><i style="width:32%" class="blue-bg"></i></div><b>16</b></div><div class="bar-row"><span>Terlambat</span><div><i style="width:18%" class="amber-bg"></i></div><b>9</b></div><div class="bar-row"><span>Belum mulai</span><div><i style="width:4%" class="red-bg"></i></div><b>2</b></div></article>
+        <article class="panel"><div class="panel-head"><div><h2>Key Risk Indicators</h2><p>Indikator melewati threshold</p></div><span class="badge-red">4 BREACH</span></div><div class="kri-row"><div><strong>System availability</strong><small>Teknologi Informasi</small></div><b>98,2%</b><span class="status critical">KRITIS</span></div><div class="kri-row"><div><strong>Occupancy rate</strong><small>Komersial</small></div><b>61%</b><span class="status warning">WASPADA</span></div><div class="kri-row"><div><strong>Overdue receivables</strong><small>Keuangan</small></div><b>Rp8,7 M</b><span class="status critical">KRITIS</span></div></article>
+      </section>
+    </div>
+
+    <div id="register" class="view"><section class="panel full"><div class="panel-head"><div><h2>Enterprise Risk Register</h2><p>Daftar risiko lintas direktorat dan status tindak lanjut</p></div><input id="search" placeholder="Cari risiko atau owner..." /></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Pernyataan Risiko</th><th>Owner</th><th>Kategori</th><th>Inherent</th><th>Residual</th><th>Appetite</th><th>Aksi</th></tr></thead><tbody id="riskTable"></tbody></table></div></section></div>
+    <div id="mitigation" class="view"><section class="panel full"><div class="panel-head"><div><h2>Mitigation Monitor</h2><p>Progres treatment plan dan akuntabilitas risk owner</p></div></div><div class="mitigation-grid" id="mitigationCards"></div></section></div>
+    <div id="kri" class="view"><section class="panel full"><div class="panel-head"><div><h2>Key Risk Indicators</h2><p>Early warning lintas fungsi</p></div></div><div class="kri-board" id="kriBoard"></div></section></div>
+  </main>
+
+  <div class="modal" id="modal"><div class="modal-card"><button class="close" id="closeModal">×</button><p class="eyebrow">RISK DETAIL</p><h2 id="modalTitle"></h2><div id="modalBody"></div></div></div>
+  <div class="toast" id="toast">Executive brief berhasil disiapkan.</div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+IFPRO RISK COMMAND CENTER — VERSI OFFLINE
+
+Cara menjalankan:
+1. Ekstrak seluruh isi file ZIP ke satu folder.
+2. Klik dua kali file index.html.
+3. Dashboard akan terbuka di Google Chrome, Microsoft Edge, atau Firefox.
+
+Dashboard ini tidak memerlukan koneksi internet dan tidak mengirim data ke layanan eksternal.
+
+Untuk instalasi pada server internal IFPRO:
+- Salin seluruh isi folder ini ke direktori web server.
+- Gunakan alamat internal atau subdomain perusahaan, misalnya risk.ifpro.id.
+- File awal yang dibuka adalah index.html.
+
+Catatan:
+Data di dalam versi ini masih berupa data contoh. Integrasi data produksi dapat dilakukan melalui aplikasi CodeIgniter 3 dan database SQL Server IFPRO.
