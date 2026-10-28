@@ -1,0 +1,37 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block TRACE, DELETE, TRACK method
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|DELETE|TRACK) [NC]
+    RewriteRule .* - [F]
+
+    # Protect system files
+    RewriteRule (^|/)(\.|composer\.(json|lock)|\.env) - [F,L,NC]
+
+    # Block common SQL Injection
+    RewriteCond %{QUERY_STRING} (\%27)|(\')|(\-\-) [NC]
+    RewriteRule .* - [F]
+
+    RewriteCond %{QUERY_STRING} UNION.*SELECT [NC]
+    RewriteRule .* - [F]
+
+    RewriteCond %{QUERY_STRING} CONCAT.*\( [NC]
+    RewriteRule .* - [F]
+
+    # Block XSS attack
+    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC]
+    RewriteRule .* - [F]
+
+    # Block directory traversal
+    RewriteCond %{QUERY_STRING} (\.\./|\.\.\\) [NC]
+    RewriteRule .* - [F]
+
+    # CodeIgniter Routing
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php/$1 [L]
+
+    # Block common hacker user agents
+    RewriteCond %{HTTP_USER_AGENT} (sqlmap|nikto|acunetix|dirbuster|nmap) [NC]
+    RewriteRule .* - [F]
+</IfModule>
