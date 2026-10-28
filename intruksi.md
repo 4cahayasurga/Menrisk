@@ -1,6 +1,0 @@
-- Buatkan fitur Login menggunakan username dan password, untuk table user terdapat nama, level, dll. Buatkan juga table department, setiap user merelasi ke table department relasinya adalah many to many.
-- Untuk level ada 2 value yaitu admin dan user.
-- Tambahkan menu Settings -> User di dalam nya terdapat data untuk mengelola user
-- Tambahkan menu Settings -> Department di dalam nya terdapat data untuk mengelola department
-- Di dalam menu Settings -> User buatkan tombol action untuk mengatur relasi user ke department, jadi misal user A punya akses ke department IT maka bisa di aktifkan melalui switch
-- Semua menu yg ada di dalam Settings hanya bisa di akses oleh user yang role == admin
