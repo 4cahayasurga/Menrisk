@@ -19,7 +19,7 @@ $page_title = $title ?? 'IFPRO Risk Command Center';
   <title><?= htmlspecialchars($page_title) ?></title>
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="<?= base_url('styles.css') ?>" />
+  <link rel="stylesheet" href="<?= base_url('styles.css?v=' . (@filemtime(FCPATH . 'styles.css') ?: '1')) ?>" />
 
   <?php if (!empty($extra_css)): ?>
     <?= $extra_css ?>

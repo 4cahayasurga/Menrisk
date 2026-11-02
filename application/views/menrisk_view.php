@@ -354,7 +354,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           </div>
 
           <!-- Row 2: Pernyataan Risiko -->
-          <div class="form-group full">
+          <div class="form-group full" style="min-height:0">
             <label for="new_title">Pernyataan Risiko (Risk Event) <span style="color:#d93b45">*</span></label>
             <textarea id="new_title" name="title" rows="2" placeholder="Uraikan peristiwa risiko yang berpotensi terjadi dan mengganggu sasaran..." required></textarea>
           </div>
@@ -396,12 +396,12 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             </select>
           </div>
 
-          <!-- Row 5: Inherent Risk (Likelihood x Impact) -->
-          <div class="form-group" style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+          <!-- Row 5: Inherent Risk & Residual Risk (Side by Side) -->
+          <div class="form-group" style="background:#f8fafc;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;">
             <label>Inherent Risk <span id="lblInherentBadge" class="score-badge" style="background:#f3a62a">Skor: 12</span></label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
               <div>
-                <small style="display:block;color:#64748b;font-size:11px">Kemungkinan (1-5)</small>
+                <small style="display:block;color:#64748b;font-size:11px;margin-bottom:4px;">Kemungkinan (1-5)</small>
                 <select id="new_inh_l" style="width:100%">
                   <option value="1">1 - Sangat Rendah</option>
                   <option value="2">2 - Rendah</option>
@@ -411,7 +411,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
                 </select>
               </div>
               <div>
-                <small style="display:block;color:#64748b;font-size:11px">Dampak (1-5)</small>
+                <small style="display:block;color:#64748b;font-size:11px;margin-bottom:4px;">Dampak (1-5)</small>
                 <select id="new_inh_i" style="width:100%">
                   <option value="1">1 - Sangat Rendah</option>
                   <option value="2">2 - Rendah</option>
@@ -424,12 +424,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             <input type="hidden" id="new_inherent" name="inherent" value="12" />
           </div>
 
-          <!-- Row 6: Residual Risk (Likelihood x Impact) -->
-          <div class="form-group" style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+          <div class="form-group" style="background:#f8fafc;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;">
             <label>Residual Risk <span id="lblResidualBadge" class="score-badge" style="background:#1c9b68">Skor: 6</span></label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
               <div>
-                <small style="display:block;color:#64748b;font-size:11px">Kemungkinan (1-5)</small>
+                <small style="display:block;color:#64748b;font-size:11px;margin-bottom:4px;">Kemungkinan (1-5)</small>
                 <select id="new_res_l" style="width:100%">
                   <option value="1">1 - Sangat Rendah</option>
                   <option value="2" selected>2 - Rendah</option>
@@ -439,7 +438,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
                 </select>
               </div>
               <div>
-                <small style="display:block;color:#64748b;font-size:11px">Dampak (1-5)</small>
+                <small style="display:block;color:#64748b;font-size:11px;margin-bottom:4px;">Dampak (1-5)</small>
                 <select id="new_res_i" style="width:100%">
                   <option value="1">1 - Sangat Rendah</option>
                   <option value="2">2 - Rendah</option>
@@ -452,24 +451,26 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             <input type="hidden" id="new_residual" name="residual" value="6" />
           </div>
 
-          <!-- Row 7: Progress & Due Date -->
+          <!-- Row 6: Progress & Due Date -->
           <div class="form-group">
-            <label for="new_progress">Progres Mitigasi <span id="lblProgress" style="color:var(--teal)">0%</span></label>
-            <input type="range" id="new_progress" name="progress" min="0" max="100" value="0" style="padding:0" />
+            <label for="new_progress">Progres Mitigasi <span id="lblProgress" style="color:var(--teal);font-weight:800">0%</span></label>
+            <div style="display:flex;align-items:center;height:38px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:0 12px;">
+              <input type="range" id="new_progress" name="progress" min="0" max="100" value="0" style="width:100%;padding:0;border:0;background:transparent;accent-color:var(--teal);cursor:pointer;" />
+            </div>
           </div>
           <div class="form-group">
             <label for="new_due">Target Selesai (Due Date)</label>
             <input type="text" id="new_due" name="due" placeholder="Contoh: 31 Des 2026 / 15 Nov 2026" />
           </div>
 
-          <!-- Row 8: Treatment Plan -->
-          <div class="form-group full">
+          <!-- Row 7: Treatment Plan -->
+          <div class="form-group full" style="min-height:0">
             <label for="new_mitigation">Rencana Mitigasi (Action Plan)</label>
             <textarea id="new_mitigation" name="mitigation" rows="2" placeholder="Uraikan strategi penanganan dan rencana perlakuan risiko..."></textarea>
           </div>
 
-          <!-- Row 9: Decision BOD -->
-          <div class="form-group full">
+          <!-- Row 8: Decision BOD -->
+          <div class="form-group full" style="min-height:0">
             <label for="new_decision">Keputusan yang Dibutuhkan dari BOD <small style="color:#64748b;font-weight:normal">(Opsional)</small></label>
             <textarea id="new_decision" name="decision" rows="2" placeholder="Uraikan arahan kebijakan, alokasi anggaran, atau otorisasi khusus BOD..."></textarea>
           </div>
@@ -726,6 +727,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           if (res.status === 'success') {
             modalAddRisk.classList.remove('show');
             formAddRisk.reset();
+            document.getElementById('lblProgress').textContent = '0%';
             updateInherentScore();
             updateResidualScore();
 
