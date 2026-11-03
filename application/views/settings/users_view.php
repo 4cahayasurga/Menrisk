@@ -27,9 +27,21 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
       <div class="panel-head">
         <div>
           <h2>Daftar Pengguna Sistem</h2>
-          <p>Total <?= count($users) ?> akun terdaftar dalam sistem ERM</p>
+          <p id="userCountSub">Total <?= count($users) ?> akun terdaftar dalam sistem ERM</p>
         </div>
-        <input id="userSearch" placeholder="Cari nama atau username..." style="max-width:240px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px;font-size:12px;" />
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="page-size-selector">
+            <label for="pageSizeSelect">Tampilkan</label>
+            <select id="pageSizeSelect">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <span>baris</span>
+          </div>
+          <input id="userSearch" placeholder="🔍 Cari nama atau username..." style="max-width:240px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px;font-size:12px;" />
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -75,14 +87,14 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
                 <td style="text-align:right">
                   <div class="action-btn-group" style="justify-content:flex-end">
                     <!-- Tombol Action untuk Mengatur Relasi User ke Department Sesuai Instruksi -->
-                    <button class="btn-dept" onclick="openDeptModal(<?= $u['id'] ?>)" title="Atur Akses Department">
+                    <button class="btn-dept" onclick="openDeptModal('<?= htmlspecialchars(addslashes($u['id'])) ?>')" title="Atur Akses Department">
                       <span>⚙</span> Atur Department
                     </button>
                     <button class="btn-edit" onclick='openEditUserModal(<?= json_encode($u) ?>)'>
                       Edit
                     </button>
-                    <?php if ((int)$u['id'] !== (int)$this->session->userdata('user_id')): ?>
-                      <button class="btn-delete" onclick="deleteUser(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['username'])) ?>')">
+                    <?php if ($u['id'] !== $this->session->userdata('user_id') && strtolower($u['id']) !== 'admin'): ?>
+                      <button class="btn-delete" onclick="deleteUser('<?= htmlspecialchars(addslashes($u['id'])) ?>', '<?= htmlspecialchars(addslashes($u['username'])) ?>')">
                         Hapus
                       </button>
                     <?php endif; ?>
@@ -92,6 +104,16 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
             <?php endforeach; ?>
           </tbody>
         </table>
+      </div>
+
+      <!-- Table Pagination Footer -->
+      <div class="table-footer">
+        <div class="table-footer-info" id="paginationInfo">
+          Menampilkan <b>0</b> - <b>0</b> dari <b>0</b> pengguna
+        </div>
+        <div class="pagination" id="paginationControls">
+          <!-- Tombol pagination digenerate dinamis via JS -->
+        </div>
       </div>
     </section>
   </main>
@@ -201,18 +223,136 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
   <script>
     let activeUserIdForDept = null;
 
-    // Search filter tabel
-    document.getElementById('userSearch').oninput = e => {
-      const q = e.target.value.toLowerCase();
-      document.querySelectorAll('#userTable tbody tr').forEach(tr => {
-        tr.style.display = tr.dataset.search.includes(q) ? '' : 'none';
+    // =========================================================================
+    // PAGINATION & LIVE FILTER LOGIC
+    // =========================================================================
+    const allTableRows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+    let filteredTableRows = allTableRows.slice();
+    let currentPage = 1;
+    let pageSize = parseInt(document.getElementById('pageSizeSelect').value, 10) || 10;
+
+    function renderPagination() {
+      const totalItems = filteredTableRows.length;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+      if (currentPage < 1) {
+        currentPage = 1;
+      }
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Sembunyikan semua row terlebih dahulu
+      allTableRows.forEach(tr => tr.style.display = 'none');
+
+      // Tampilkan row untuk halaman aktif
+      if (totalItems > 0) {
+        for (let i = startIndex; i < endIndex; i++) {
+          filteredTableRows[i].style.display = '';
+        }
+      }
+
+      // Baris kosong jika tidak ada hasil pencarian
+      let noRow = document.getElementById('noUserMatchRow');
+      if (totalItems === 0) {
+        if (!noRow) {
+          noRow = document.createElement('tr');
+          noRow.id = 'noUserMatchRow';
+          noRow.innerHTML = '<td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Tidak ada akun pengguna yang cocok dengan pencarian.</td>';
+          document.querySelector('#userTable tbody').appendChild(noRow);
+        }
+        noRow.style.display = '';
+      } else if (noRow) {
+        noRow.style.display = 'none';
+      }
+
+      // Update teks informasi pagination
+      const infoEl = document.getElementById('paginationInfo');
+      if (infoEl) {
+        if (totalItems === 0) {
+          infoEl.innerHTML = 'Menampilkan <b>0</b> pengguna';
+        } else {
+          infoEl.innerHTML = `Menampilkan <b>${startIndex + 1}</b> - <b>${endIndex}</b> dari <b>${totalItems}</b> pengguna` +
+            (totalItems < allTableRows.length ? ` <span style="color:var(--muted)">(difilter dari total ${allTableRows.length})</span>` : '');
+        }
+      }
+
+      // Render tombol kontrol pagination
+      const container = document.getElementById('paginationControls');
+      if (!container) return;
+
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+
+      // Tombol Previous
+      html += `<button type="button" class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})" title="Halaman Sebelumnya">‹ Prev</button>`;
+
+      // Page numbers dengan smart windowing
+      const pageNumbers = getPageRange(currentPage, totalPages);
+      pageNumbers.forEach(p => {
+        if (p === '...') {
+          html += `<span class="page-ellipsis">…</span>`;
+        } else {
+          html += `<button type="button" class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+        }
       });
+
+      // Tombol Next
+      html += `<button type="button" class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})" title="Halaman Selanjutnya">Next ›</button>`;
+
+      container.innerHTML = html;
+    }
+
+    function getPageRange(current, total) {
+      if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+      }
+      if (current <= 4) {
+        return [1, 2, 3, 4, 5, '...', total];
+      }
+      if (current >= total - 3) {
+        return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+      }
+      return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    function goToPage(p) {
+      currentPage = p;
+      renderPagination();
+      // Scroll perlahan ke atas tabel jika di bawah
+      const tableWrap = document.querySelector('.table-wrap');
+      if (tableWrap) tableWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Event search & page size
+    document.getElementById('userSearch').oninput = e => {
+      const q = e.target.value.toLowerCase().trim();
+      filteredTableRows = allTableRows.filter(tr => tr.dataset.search.includes(q));
+      currentPage = 1;
+      renderPagination();
     };
+
+    document.getElementById('pageSizeSelect').onchange = e => {
+      pageSize = parseInt(e.target.value, 10) || 10;
+      currentPage = 1;
+      renderPagination();
+    };
+
+    // Inisialisasi awal pagination
+    renderPagination();
 
     // Modal Tambah User
     function openAddUserModal() {
       document.getElementById('userId').value = '';
       document.getElementById('formUsername').value = '';
+      document.getElementById('formUsername').readOnly = false;
       document.getElementById('formNama').value = '';
       document.getElementById('formPassword').value = '';
       document.getElementById('formPassword').required = true;
@@ -228,6 +368,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
     function openEditUserModal(u) {
       document.getElementById('userId').value = u.id;
       document.getElementById('formUsername').value = u.username;
+      document.getElementById('formUsername').readOnly = true;
       document.getElementById('formNama').value = u.nama;
       document.getElementById('formPassword').value = '';
       document.getElementById('formPassword').required = false;
@@ -326,7 +467,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'User Management —
                 <input 
                   type="checkbox" 
                   ${d.is_assigned ? 'checked' : ''} 
-                  onchange="toggleDept(${currentDeptUser.id}, ${d.id}, this)" 
+                  onchange="toggleDept('${currentDeptUser.id}', ${d.id}, this)" 
                 />
                 <span class="slider"></span>
               </label>

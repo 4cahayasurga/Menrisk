@@ -93,7 +93,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
         <div class="alert-icon">!</div>
         <div>
           <strong><span id="alertCount"><?= $kpis['critical_risks'] ?></span> risiko memerlukan keputusan BOD</strong>
-          <p>Eksposur kritis teridentifikasi pada database risiko SQL Server dan memerlukan penanganan segera.</p>
+          <p>Eksposur kritis teridentifikasi dan memerlukan penanganan segera.</p>
         </div>
         <button id="showCritical">Tinjau sekarang →</button>
       </section>
@@ -309,7 +309,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
         <div class="panel-head">
           <div>
             <h2>Key Risk Indicators (KRI)</h2>
-            <p>Early warning metrics dari SQL Server dbo.kri</p>
+            <p>Early warning metrics dari SQL Server dbo.MNRSK_kri</p>
           </div>
         </div>
         <div class="kri-board" id="kriBoard">
@@ -370,7 +370,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
               <option value="">-- Pilih Department --</option>
               <?php if (!empty($available_depts)): ?>
                 <?php foreach ($available_depts as $dept): ?>
-                  <option value="<?= $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?> (<?= htmlspecialchars($dept['code'] ?? '') ?>)</option>
+                  <option value="<?= $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?><?= (!empty($dept['code']) && $dept['code'] !== $dept['name']) ? ' (' . htmlspecialchars($dept['code']) . ')' : '' ?></option>
                 <?php endforeach; ?>
               <?php endif; ?>
             </select>

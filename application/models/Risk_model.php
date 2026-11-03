@@ -3,11 +3,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Model: Risk_model
- * Menangani transaksi tabel dbo.risks di Microsoft SQL Server
+ * Menangani transaksi tabel dbo.MNRSK_risks di Microsoft SQL Server
+ * Berelasi dengan master department dbo.organisation_d_3s
  */
 class Risk_model extends CI_Model {
 
-    protected $table = 'dbo.risks';
+    protected $table = 'dbo.MNRSK_risks';
+    protected $table_dept = 'dbo.organisation_d_3s';
 
     public function __construct() {
         parent::__construct();
@@ -17,7 +19,7 @@ class Risk_model extends CI_Model {
     /**
      * Ambil data resiko dengan kriteria filter
      * 
-     * @param array $filters ['period', 'dir', 'cat', 'search']
+     * @param array $filters ['period', 'dir', 'cat', 'search', 'allowed_dept_ids']
      * @return array
      */
     public function get_all($filters = []) {
@@ -31,9 +33,9 @@ class Risk_model extends CI_Model {
 
         try {
             if ($this->db && $this->db->conn_id) {
-                $this->db->select('r.id, r.title, r.owner, r.department_id, COALESCE(d.name, r.dir) AS dir, d.code AS department_code, r.cat, r.inherent, r.residual, r.appetite, r.progress, r.due, r.decision, r.mitigation, r.period');
+                $this->db->select('r.id, r.title, r.owner, r.department_id, COALESCE(d.d_3_name, r.dir) AS dir, d.d_3_desc AS department_code, d.d_3_name, d.d_3_desc, r.cat, r.inherent, r.residual, r.appetite, r.progress, r.due, r.decision, r.mitigation, r.period');
                 $this->db->from($this->table . ' r');
-                $this->db->join('dbo.departments d', 'r.department_id = d.id', 'left');
+                $this->db->join($this->table_dept . ' d', 'r.department_id = d.id', 'left');
 
                 if (!empty($period) && $period !== 'all') {
                     $this->db->where('r.period', $period);
@@ -53,7 +55,7 @@ class Risk_model extends CI_Model {
                         $this->db->where('r.department_id', (int)$dir);
                     } else {
                         $this->db->group_start();
-                        $this->db->where('d.name', $dir);
+                        $this->db->where('d.d_3_name', $dir);
                         $this->db->or_where('r.dir', $dir);
                         $this->db->group_end();
                     }
@@ -66,7 +68,8 @@ class Risk_model extends CI_Model {
                     $this->db->like('r.id', $search);
                     $this->db->or_like('r.title', $search);
                     $this->db->or_like('r.owner', $search);
-                    $this->db->or_like('d.name', $search);
+                    $this->db->or_like('d.d_3_name', $search);
+                    $this->db->or_like('r.dir', $search);
                     $this->db->group_end();
                 }
 
@@ -128,9 +131,9 @@ class Risk_model extends CI_Model {
     public function get_by_id($id) {
         try {
             if ($this->db && $this->db->conn_id) {
-                $query = $this->db->select('r.id, r.title, r.owner, r.department_id, COALESCE(d.name, r.dir) AS dir, d.code AS department_code, r.cat, r.inherent, r.residual, r.appetite, r.progress, r.due, r.decision, r.mitigation, r.period')
+                $query = $this->db->select('r.id, r.title, r.owner, r.department_id, COALESCE(d.d_3_name, r.dir) AS dir, d.d_3_desc AS department_code, d.d_3_name, d.d_3_desc, r.cat, r.inherent, r.residual, r.appetite, r.progress, r.due, r.decision, r.mitigation, r.period')
                                   ->from($this->table . ' r')
-                                  ->join('dbo.departments d', 'r.department_id = d.id', 'left')
+                                  ->join($this->table_dept . ' d', 'r.department_id = d.id', 'left')
                                   ->where('r.id', $id)
                                   ->get();
                 if ($query && $query->num_rows() > 0) {
@@ -155,7 +158,6 @@ class Risk_model extends CI_Model {
 
         return NULL;
     }
-
 
     /**
      * Ambil Top N risks berdasarkan residual score
@@ -227,7 +229,7 @@ class Risk_model extends CI_Model {
     }
 
     /**
-     * Insert data resiko baru
+     * Insert data resiko baru ke dbo.MNRSK_risks
      */
     public function insert($data) {
         if ($this->db && $this->db->conn_id) {
@@ -237,7 +239,7 @@ class Risk_model extends CI_Model {
     }
 
     /**
-     * Update data resiko
+     * Update data resiko pada dbo.MNRSK_risks
      */
     public function update($id, $data) {
         if ($this->db && $this->db->conn_id) {
@@ -247,7 +249,7 @@ class Risk_model extends CI_Model {
     }
 
     /**
-     * Delete data resiko
+     * Delete data resiko dari dbo.MNRSK_risks
      */
     public function delete($id) {
         if ($this->db && $this->db->conn_id) {
@@ -265,8 +267,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-001',
                 'title' => 'Gangguan layanan sistem kritikal dan serangan siber',
                 'owner' => 'Manager IT',
-                'department_id' => 1,
-                'dir' => 'Teknologi Informasi',
+                'department_id' => 16,
+                'dir' => 'IT',
                 'cat' => 'Teknologi',
                 'inherent' => 25,
                 'residual' => 20,
@@ -281,8 +283,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-002',
                 'title' => 'Target okupansi Sosoro Mall tidak tercapai',
                 'owner' => 'VP Komersial',
-                'department_id' => 3,
-                'dir' => 'Komersial',
+                'department_id' => 4,
+                'dir' => 'Marketing & Leasing',
                 'cat' => 'Strategis',
                 'inherent' => 20,
                 'residual' => 16,
@@ -297,8 +299,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-003',
                 'title' => 'Piutang usaha melewati jatuh tempo',
                 'owner' => 'VP Keuangan',
-                'department_id' => 4,
-                'dir' => 'Keuangan',
+                'department_id' => 20,
+                'dir' => 'Finance & Treasury',
                 'cat' => 'Keuangan',
                 'inherent' => 20,
                 'residual' => 15,
@@ -311,10 +313,10 @@ class Risk_model extends CI_Model {
             ],
             [
                 'id' => 'R-004',
-                'title' => 'Ketergangtungan pendapatan pada pelanggan utama',
+                'title' => 'Ketergantungan pendapatan pada pelanggan utama',
                 'owner' => 'Direktur Komersial',
-                'department_id' => 3,
-                'dir' => 'Komersial',
+                'department_id' => 4,
+                'dir' => 'Marketing & Leasing',
                 'cat' => 'Strategis',
                 'inherent' => 16,
                 'residual' => 12,
@@ -329,8 +331,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-005',
                 'title' => 'Kegagalan SLA layanan kebersihan dan keamanan',
                 'owner' => 'VP Operasional',
-                'department_id' => 2,
-                'dir' => 'Operasional',
+                'department_id' => 14,
+                'dir' => 'HSE & Facility',
                 'cat' => 'Operasional',
                 'inherent' => 16,
                 'residual' => 12,
@@ -345,8 +347,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-006',
                 'title' => 'Ketidakpatuhan perizinan dan regulasi properti',
                 'owner' => 'Corporate Secretary',
-                'department_id' => 2,
-                'dir' => 'Operasional',
+                'department_id' => 17,
+                'dir' => 'Corporate Secretary',
                 'cat' => 'Kepatuhan',
                 'inherent' => 15,
                 'residual' => 10,
@@ -361,8 +363,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-007',
                 'title' => 'Keterlambatan proyek revitalisasi aset',
                 'owner' => 'VP Property',
-                'department_id' => 2,
-                'dir' => 'Operasional',
+                'department_id' => 13,
+                'dir' => 'Construction & Fit Out',
                 'cat' => 'Operasional',
                 'inherent' => 15,
                 'residual' => 9,
@@ -377,8 +379,8 @@ class Risk_model extends CI_Model {
                 'id' => 'R-008',
                 'title' => 'Kesenjangan kompetensi digital tenaga kerja',
                 'owner' => 'VP Human Capital',
-                'department_id' => 5,
-                'dir' => 'Human Capital',
+                'department_id' => 15,
+                'dir' => 'HR & GA',
                 'cat' => 'Strategis',
                 'inherent' => 12,
                 'residual' => 8,

@@ -3,11 +3,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Model: Kri_model
- * Menangani transaksi tabel dbo.kri di Microsoft SQL Server
+ * Menangani transaksi tabel dbo.MNRSK_kri di Microsoft SQL Server
+ * Berelasi dengan master department dbo.organisation_d_3s
  */
 class Kri_model extends CI_Model {
 
-    protected $table = 'dbo.kri';
+    protected $table = 'dbo.MNRSK_kri';
+    protected $table_dept = 'dbo.organisation_d_3s';
 
     public function __construct() {
         parent::__construct();
@@ -15,16 +17,16 @@ class Kri_model extends CI_Model {
     }
 
     /**
-     * Ambil data KRI berdasarkan periode
+     * Ambil data KRI berdasarkan periode dan hak akses department
      */
     public function get_all($period = 'September 2026', $allowed_dept_ids = null, $dept = 'all') {
         $kri = [];
 
         try {
             if ($this->db && $this->db->conn_id) {
-                $this->db->select('k.id, k.indicator, k.value, k.threshold, k.department_id, COALESCE(d.name, k.directorate) AS directorate, d.code AS department_code, k.status, k.period');
+                $this->db->select('k.id, k.indicator, k.value, k.threshold, k.department_id, COALESCE(d.d_3_name, k.directorate) AS directorate, d.d_3_desc AS department_code, d.d_3_name, d.d_3_desc, k.status, k.period');
                 $this->db->from($this->table . ' k');
-                $this->db->join('dbo.departments d', 'k.department_id = d.id', 'left');
+                $this->db->join($this->table_dept . ' d', 'k.department_id = d.id', 'left');
 
                 if (!empty($period) && $period !== 'all') {
                     $this->db->where('k.period', $period);
@@ -44,7 +46,7 @@ class Kri_model extends CI_Model {
                         $this->db->where('k.department_id', (int)$dept);
                     } else {
                         $this->db->group_start();
-                        $this->db->where('d.name', $dept);
+                        $this->db->where('d.d_3_name', $dept);
                         $this->db->or_where('k.directorate', $dept);
                         $this->db->group_end();
                     }
@@ -82,7 +84,6 @@ class Kri_model extends CI_Model {
         return $kri;
     }
 
-
     /**
      * Ambil KRI yang berstatus 'Kritis' atau 'Waspada'
      */
@@ -98,12 +99,12 @@ class Kri_model extends CI_Model {
      */
     public function get_fallback_data() {
         return [
-            ['id' => 1, 'indicator' => 'System availability', 'value' => '98,2%', 'threshold' => '≥ 99,5%', 'department_id' => 1, 'directorate' => 'Teknologi Informasi', 'status' => 'Kritis', 'period' => 'September 2026'],
-            ['id' => 2, 'indicator' => 'Occupancy rate', 'value' => '61%', 'threshold' => '≥ 75%', 'department_id' => 3, 'directorate' => 'Komersial', 'status' => 'Waspada', 'period' => 'September 2026'],
-            ['id' => 3, 'indicator' => 'Overdue receivables', 'value' => 'Rp8,7 M', 'threshold' => '≤ Rp5 M', 'department_id' => 4, 'directorate' => 'Keuangan', 'status' => 'Kritis', 'period' => 'September 2026'],
-            ['id' => 4, 'indicator' => 'SLA vendor achievement', 'value' => '91%', 'threshold' => '≥ 95%', 'department_id' => 2, 'directorate' => 'Operasional', 'status' => 'Waspada', 'period' => 'September 2026'],
-            ['id' => 5, 'indicator' => 'Employee turnover', 'value' => '4,1%', 'threshold' => '≤ 8%', 'department_id' => 5, 'directorate' => 'Human Capital', 'status' => 'Normal', 'period' => 'September 2026'],
-            ['id' => 6, 'indicator' => 'Project delay index', 'value' => '7,5%', 'threshold' => '≤ 10%', 'department_id' => 2, 'directorate' => 'Operasional', 'status' => 'Normal', 'period' => 'September 2026']
+            ['id' => 1, 'indicator' => 'System availability', 'value' => '98,2%', 'threshold' => '≥ 99,5%', 'department_id' => 16, 'directorate' => 'IT', 'status' => 'Kritis', 'period' => 'September 2026'],
+            ['id' => 2, 'indicator' => 'Occupancy rate', 'value' => '61%', 'threshold' => '≥ 75%', 'department_id' => 4, 'directorate' => 'Marketing & Leasing', 'status' => 'Waspada', 'period' => 'September 2026'],
+            ['id' => 3, 'indicator' => 'Overdue receivables', 'value' => 'Rp8,7 M', 'threshold' => '≤ Rp5 M', 'department_id' => 20, 'directorate' => 'Finance & Treasury', 'status' => 'Kritis', 'period' => 'September 2026'],
+            ['id' => 4, 'indicator' => 'SLA vendor achievement', 'value' => '91%', 'threshold' => '≥ 95%', 'department_id' => 14, 'directorate' => 'HSE & Facility', 'status' => 'Waspada', 'period' => 'September 2026'],
+            ['id' => 5, 'indicator' => 'Employee turnover', 'value' => '4,1%', 'threshold' => '≤ 8%', 'department_id' => 15, 'directorate' => 'HR & GA', 'status' => 'Normal', 'period' => 'September 2026'],
+            ['id' => 6, 'indicator' => 'Project delay index', 'value' => '7,5%', 'threshold' => '≤ 10%', 'department_id' => 13, 'directorate' => 'Construction & Fit Out', 'status' => 'Normal', 'period' => 'September 2026']
         ];
     }
 }

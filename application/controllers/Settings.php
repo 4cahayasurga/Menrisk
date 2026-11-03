@@ -117,13 +117,13 @@ class Settings extends CI_Controller {
     /**
      * Hapus User
      */
-    public function user_delete($id) {
-        $id = (int)$id;
-        // Cegah menghapus akun sendiri yang sedang login
-        if ($id === (int)$this->session->userdata('user_id')) {
+    public function user_delete($id = NULL) {
+        $id = trim((string)$id);
+        // Cegah menghapus akun sendiri yang sedang login atau akun admin utama
+        if ($id === '' || strtolower($id) === 'admin' || strtolower($id) === strtolower((string)$this->session->userdata('user_id'))) {
             return $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'  => 'error',
-                'message' => 'Anda tidak dapat menghapus akun Anda sendiri saat sedang login!'
+                'message' => 'Anda tidak dapat menghapus akun ini!'
             ]));
         }
 
@@ -137,8 +137,8 @@ class Settings extends CI_Controller {
     /**
      * Ambil data department dan status aktif untuk user tertentu (Untuk Modal Switch)
      */
-    public function user_departments($user_id) {
-        $user_id = (int)$user_id;
+    public function user_departments($user_id = NULL) {
+        $user_id = trim((string)$user_id);
         $user = $this->User_model->get_by_id($user_id);
         if (!$user) {
             return $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode([
@@ -166,11 +166,11 @@ class Settings extends CI_Controller {
      * Sesuai instruksi: "diaktifkan melalui switch"
      */
     public function toggle_user_department() {
-        $user_id       = (int)$this->input->post('user_id');
+        $user_id       = trim((string)$this->input->post('user_id', TRUE));
         $department_id = (int)$this->input->post('department_id');
         $enabled       = (bool)$this->input->post('enabled');
 
-        if (!$user_id || !$department_id) {
+        if ($user_id === '' || !$department_id) {
             return $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'  => 'error',
                 'message' => 'Parameter user_id dan department_id diperlukan.'

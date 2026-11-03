@@ -38,7 +38,7 @@ class Menrisk extends CI_Controller {
         $search_keyword       = $this->input->get('search', TRUE) ?: '';
 
         // Identifikasi hak akses pengguna yang sedang login
-        $user_id   = (int)$this->session->userdata('user_id');
+        $user_id   = trim((string)$this->session->userdata('user_id'));
         $user_role = $this->session->userdata('level'); // 'admin' atau 'user'
 
         $allowed_dept_ids = null;
@@ -154,7 +154,7 @@ class Menrisk extends CI_Controller {
      * POST /menrisk/store_risk
      */
     public function store_risk() {
-        $user_id   = (int)$this->session->userdata('user_id');
+        $user_id   = trim((string)$this->session->userdata('user_id'));
         $user_role = $this->session->userdata('level');
 
         $allowed_dept_ids = null;
@@ -285,7 +285,7 @@ class Menrisk extends CI_Controller {
      */
     public function export_brief() {
         $period    = $this->input->get('period') ?: 'September 2026';
-        $user_id   = (int)$this->session->userdata('user_id');
+        $user_id   = trim((string)$this->session->userdata('user_id'));
         $user_role = $this->session->userdata('level');
 
         $allowed_dept_ids = null;
