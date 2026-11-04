@@ -182,6 +182,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
       }
     });
   </script>
+
+    
   <?php endif; ?>
+
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="<?= base_url('assets/js/bootstrap.bundle.min.js') ?>"></script>
+  
 </body>
 </html>

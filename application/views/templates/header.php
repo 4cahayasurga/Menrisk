@@ -18,7 +18,10 @@ $page_title = $title ?? 'IFPRO Risk Command Center';
   <meta name="description" content="<?= htmlspecialchars($meta_description ?? 'IFPRO Risk Command Center — dashboard risiko eksekutif BOD') ?>" />
   <title><?= htmlspecialchars($page_title) ?></title>
   
-  <!-- CSS Stylesheet -->
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="<?= base_url('assets/css/bootstrap.min.css') ?>" />
+
+  <!-- CSS Stylesheet (IFPRO Theme & Overrides) -->
   <link rel="stylesheet" href="<?= base_url('styles.css?v=' . (@filemtime(FCPATH . 'styles.css') ?: '1')) ?>" />
 
   <?php if (!empty($extra_css)): ?>
