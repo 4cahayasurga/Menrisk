@@ -56,6 +56,12 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
       </a>
     <?php endif; ?>
 
+    <!-- MENU MASTER DATA -->
+    <div class="sidebar-section">MASTER DATA</div>
+    <a href="<?= site_url('MasterData/KategoriRisiko') ?>" class="nav <?= ($active_menu === 'm_kategori_risiko') ? 'active' : '' ?>" style="text-decoration:none">
+        <span>≡</span> Kategori Risiko
+    </a>
+
     <!-- MENU SETTINGS (Hanya Tampil untuk Administrator) -->
     <?php if ($user_level === 'admin'): ?>
       <div class="sidebar-section">SETTINGS</div>

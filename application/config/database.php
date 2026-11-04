@@ -24,6 +24,7 @@ $db['default'] = array(
 	'username' => 'sa',
 	'password' => 'PasswordKuat123!',
 	'database' => 'AIS_2_Mar2026v3',
+	// 'database' => 'menrisk_db',
 	'dbdriver' => 'sqlsrv',
 	'subdriver'=> '',
 	'dbprefix' => '',
