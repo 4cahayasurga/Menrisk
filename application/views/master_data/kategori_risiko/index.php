@@ -10,7 +10,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
     <header>
       <button class="menu" aria-label="Buka menu">☰</button>
       <div>
-        <p class="eyebrow">MASTER DATA · TAKSONOMI RISIKO KBUMN</p>
+        <p class="eyebrow">MASTER DATA · TAKSONOMI RISIKO PORTOFOLIO</p>
         <h1>Kategori Risiko</h1>
         <p class="subtitle">Taksonomi risiko bertingkat: Tema Risiko KBUMN (T1), Kategori Risiko KBUMN (T2), Kategori Risiko Perusahaan (T3), dan Peristiwa Risiko Perusahaan (T4)</p>
       </div>
@@ -458,7 +458,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
     </div>
   </div>
 
-  <!-- JAVASCRIPT: CLEAN EXPAND, COLLAPSE, ADD & EDIT LOGIC -->
+  <!-- JAVASCRIPT: JQUERY V3 IMPLEMENTATION (EXPAND, COLLAPSE, ADD & EDIT) -->
   <script>
     // Data opsi parent untuk dropdown dinamis modal tambah
     const PARENT_OPTIONS = {
@@ -472,35 +472,36 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
      * Toggle visibility container sub-table
      */
     function toggleSubTable(targetId, btn) {
-      const row = document.getElementById(targetId);
-      if (!row) return;
+      const $row = $('#' + targetId);
+      if (!$row.length) return;
 
-      const isHidden = row.classList.contains('d-none');
-      const relatedButtons = document.querySelectorAll(`[data-target="${targetId}"]`);
+      const isHidden = $row.hasClass('d-none');
+      const $relatedButtons = $('[data-target="' + targetId + '"]');
 
       if (isHidden) {
-        row.classList.remove('d-none');
-        setButtonState(btn, true);
-        relatedButtons.forEach(b => setButtonState(b, true));
+        $row.removeClass('d-none');
+        setButtonState($(btn), true);
+        $relatedButtons.each(function() { setButtonState($(this), true); });
       } else {
-        row.classList.add('d-none');
-        setButtonState(btn, false);
-        relatedButtons.forEach(b => setButtonState(b, false));
+        $row.addClass('d-none');
+        setButtonState($(btn), false);
+        $relatedButtons.each(function() { setButtonState($(this), false); });
       }
     }
 
     /**
      * Update state dan label tombol toggle
      */
-    function setButtonState(btn, isOpen) {
-      if (!btn) return;
-      const lbl = btn.querySelector('.lbl');
+    function setButtonState($btn, isOpen) {
+      $btn = $($btn);
+      if (!$btn.length) return;
+      const $lbl = $btn.find('.lbl');
       if (isOpen) {
-        btn.classList.add('active');
-        if (lbl) lbl.textContent = 'Collapse';
+        $btn.addClass('active');
+        if ($lbl.length) $lbl.text('Collapse');
       } else {
-        btn.classList.remove('active');
-        if (lbl) lbl.textContent = 'Expand';
+        $btn.removeClass('active');
+        if ($lbl.length) $lbl.text('Expand');
       }
     }
 
@@ -508,8 +509,10 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
      * Expand semua tingkatan sub-table secara serentak
      */
     function expandAllCategories() {
-      document.querySelectorAll('.subtable-row').forEach(r => r.classList.remove('d-none'));
-      document.querySelectorAll('.btn-clean-toggle').forEach(b => setButtonState(b, true));
+      $('.subtable-row').removeClass('d-none');
+      $('.btn-clean-toggle').each(function() {
+        setButtonState($(this), true);
+      });
       if (typeof showToast === 'function') {
         showToast('Semua level sub-table berhasil di-expand');
       }
@@ -519,8 +522,10 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
      * Collapse semua tingkatan sub-table kembali ke Table Parent (T1)
      */
     function collapseAllCategories() {
-      document.querySelectorAll('.subtable-row').forEach(r => r.classList.add('d-none'));
-      document.querySelectorAll('.btn-clean-toggle').forEach(b => setButtonState(b, false));
+      $('.subtable-row').addClass('d-none');
+      $('.btn-clean-toggle').each(function() {
+        setButtonState($(this), false);
+      });
       if (typeof showToast === 'function') {
         showToast('Semua sub-table berhasil di-collapse');
       }
@@ -530,30 +535,33 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
      * Pencarian real-time (jika keyword ada di child row, parent otomatis di-expand)
      */
     function searchCategoryTable(keyword) {
-      const q = keyword.trim().toLowerCase();
-      const allDataRows = document.querySelectorAll('tr[data-search]');
+      const q = $.trim(keyword).toLowerCase();
+      const $allDataRows = $('tr[data-search]');
 
       if (!q) {
-        allDataRows.forEach(r => r.style.display = '');
+        $allDataRows.show();
         return;
       }
 
-      allDataRows.forEach(row => {
-        const text = row.getAttribute('data-search') || '';
-        const match = text.includes(q);
+      $allDataRows.each(function() {
+        const $row = $(this);
+        const text = ($row.attr('data-search') || '').toLowerCase();
+        const match = text.indexOf(q) !== -1;
 
         if (match) {
-          row.style.display = '';
+          $row.show();
           // Buka parent container jika ada di dalam subtable
-          let parentSub = row.closest('.subtable-row');
-          while (parentSub) {
-            parentSub.classList.remove('d-none');
-            const parentToggle = document.querySelector(`[data-target="${parentSub.id}"]`);
-            if (parentToggle) setButtonState(parentToggle, true);
-            parentSub = parentSub.parentElement.closest('.subtable-row');
+          let $parentSub = $row.closest('.subtable-row');
+          while ($parentSub.length) {
+            $parentSub.removeClass('d-none');
+            const parentId = $parentSub.attr('id');
+            if (parentId) {
+              setButtonState($('[data-target="' + parentId + '"]'), true);
+            }
+            $parentSub = $parentSub.parent().closest('.subtable-row');
           }
         } else {
-          row.style.display = 'none';
+          $row.hide();
         }
       });
     }
@@ -562,239 +570,247 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
     // FITUR TAMBAH DATA (ADD MODAL)
     // =========================================================================
     function openAddCategoryModal(defaultLevel = 'T1') {
-      document.getElementById('addCategoryForm').reset();
-      document.getElementById('addLevelSelect').value = defaultLevel;
-      document.getElementById('addLevelSelect').disabled = false;
+      $('#addCategoryForm')[0].reset();
+      $('#addLevelSelect').val(defaultLevel).prop('disabled', false);
       onAddLevelChange(defaultLevel);
-      document.getElementById('addCategoryModal').classList.add('show');
-      setTimeout(() => document.getElementById('addCode').focus(), 50);
+      $('#addCategoryModal').addClass('show');
+      setTimeout(() => $('#addCode').trigger('focus'), 50);
     }
 
     /**
      * Membuka modal tambah anak (Sub-Category) dengan parent yang langsung terkunci & terpilih
      */
     function openAddSubCategoryModal(targetLevel, parentId, parentNama, parentCode) {
-      document.getElementById('addCategoryForm').reset();
-      document.getElementById('addLevelSelect').value = targetLevel;
-      document.getElementById('addLevelSelect').disabled = false;
+      $('#addCategoryForm')[0].reset();
+      $('#addLevelSelect').val(targetLevel).prop('disabled', false);
       onAddLevelChange(targetLevel, parentId);
 
       // Otomatis sarankan prefix kode anak
-      const codeInput = document.getElementById('addCode');
+      const $codeInput = $('#addCode');
       if (parentCode) {
-        codeInput.value = parentCode + '.';
+        $codeInput.val(parentCode + '.');
       }
 
-      document.getElementById('addCategoryModal').classList.add('show');
-      setTimeout(() => codeInput.focus(), 50);
+      $('#addCategoryModal').addClass('show');
+      setTimeout(() => $codeInput.trigger('focus'), 50);
     }
 
     function closeAddCategoryModal() {
-      document.getElementById('addCategoryModal').classList.remove('show');
+      $('#addCategoryModal').removeClass('show');
     }
 
     /**
      * Handler saat tingkat level dipilih pada form tambah
      */
     function onAddLevelChange(level, preselectedParentId = null) {
-      const parentGroup  = document.getElementById('addParentGroup');
-      const parentLabel  = document.getElementById('addParentLabel');
-      const parentSelect = document.getElementById('addParentSelect');
-      const codeInput    = document.getElementById('addCode');
-      const nameLabel    = document.getElementById('addNameLabel');
-      const modalEyebrow = document.getElementById('addModalEyebrow');
-      const modalTitle   = document.getElementById('addModalTitle');
+      const $parentGroup  = $('#addParentGroup');
+      const $parentLabel  = $('#addParentLabel');
+      const $parentSelect = $('#addParentSelect');
+      const $codeInput    = $('#addCode');
+      const $nameLabel    = $('#addNameLabel');
+      const $modalEyebrow = $('#addModalEyebrow');
+      const $modalTitle   = $('#addModalTitle');
 
-      parentSelect.innerHTML = '<option value="">-- Pilih Induk --</option>';
+      $parentSelect.html('<option value="">-- Pilih Induk --</option>');
 
       if (level === 'T1') {
-        parentGroup.style.display = 'none';
-        parentSelect.required = false;
-        nameLabel.textContent = 'Tema Risiko (T1)';
-        codeInput.placeholder = 'Contoh: 1, 2, 3';
-        modalEyebrow.textContent = 'TAMBAH TEMA RISIKO (T1)';
-        modalTitle.textContent   = 'Tambah Tema Risiko KBUMN';
+        $parentGroup.hide();
+        $parentSelect.prop('required', false);
+        $nameLabel.text('Tema Risiko (T1)');
+        $codeInput.attr('placeholder', 'Contoh: 1, 2, 3');
+        $modalEyebrow.text('TAMBAH TEMA RISIKO (T1)');
+        $modalTitle.text('Tambah Tema Risiko KBUMN');
       } else {
-        parentGroup.style.display = 'block';
-        parentSelect.required = true;
+        $parentGroup.show();
+        $parentSelect.prop('required', true);
 
         const opts = PARENT_OPTIONS[level] || [];
-        opts.forEach(o => {
-          const optEl = document.createElement('option');
-          optEl.value = o.id;
-          optEl.textContent = `[${o.code}] ${o.nama}`;
-          if (preselectedParentId && String(o.id) === String(preselectedParentId)) {
-            optEl.selected = true;
-          }
-          parentSelect.appendChild(optEl);
+        $.each(opts, function(i, o) {
+          const isSelected = (preselectedParentId && String(o.id) === String(preselectedParentId)) ? 'selected' : '';
+          $parentSelect.append('<option value="' + o.id + '" ' + isSelected + '>[' + o.code + '] ' + o.nama + '</option>');
         });
 
         if (level === 'T2') {
-          parentLabel.textContent  = 'Pilih Induk Tema Risiko (T1)';
-          nameLabel.textContent    = 'Kategori Risiko KBUMN (T2)';
-          codeInput.placeholder    = 'Contoh: 1.1, 1.2';
-          modalEyebrow.textContent = 'TAMBAH KATEGORI KBUMN (T2)';
-          modalTitle.textContent   = 'Tambah Kategori Risiko KBUMN';
+          $parentLabel.text('Pilih Induk Tema Risiko (T1)');
+          $nameLabel.text('Kategori Risiko KBUMN (T2)');
+          $codeInput.attr('placeholder', 'Contoh: 1.1, 1.2');
+          $modalEyebrow.text('TAMBAH KATEGORI KBUMN (T2)');
+          $modalTitle.text('Tambah Kategori Risiko KBUMN');
         } else if (level === 'T3') {
-          parentLabel.textContent  = 'Pilih Induk Kategori KBUMN (T2)';
-          nameLabel.textContent    = 'Kategori Risiko Perusahaan (T3)';
-          codeInput.placeholder    = 'Contoh: 1.1.1, 1.1.2';
-          modalEyebrow.textContent = 'TAMBAH KATEGORI PERUSAHAAN (T3)';
-          modalTitle.textContent   = 'Tambah Kategori Risiko Perusahaan';
+          $parentLabel.text('Pilih Induk Kategori KBUMN (T2)');
+          $nameLabel.text('Kategori Risiko Perusahaan (T3)');
+          $codeInput.attr('placeholder', 'Contoh: 1.1.1, 1.1.2');
+          $modalEyebrow.text('TAMBAH KATEGORI PERUSAHAAN (T3)');
+          $modalTitle.text('Tambah Kategori Risiko Perusahaan');
         } else if (level === 'T4') {
-          parentLabel.textContent  = 'Pilih Induk Kategori Perusahaan (T3)';
-          nameLabel.textContent    = 'Peristiwa Risiko Perusahaan (T4)';
-          codeInput.placeholder    = 'Contoh: 1.1.1.1, 1.1.1.2';
-          modalEyebrow.textContent = 'TAMBAH PERISTIWA RISIKO (T4)';
-          modalTitle.textContent   = 'Tambah Peristiwa Risiko Perusahaan';
+          $parentLabel.text('Pilih Induk Kategori Perusahaan (T3)');
+          $nameLabel.text('Peristiwa Risiko Perusahaan (T4)');
+          $codeInput.attr('placeholder', 'Contoh: 1.1.1.1, 1.1.1.2');
+          $modalEyebrow.text('TAMBAH PERISTIWA RISIKO (T4)');
+          $modalTitle.text('Tambah Peristiwa Risiko Perusahaan');
         }
       }
     }
 
     async function submitAddCategory(e) {
-      e.preventDefault();
+      if (e && e.preventDefault) e.preventDefault();
 
-      const saveBtn = document.getElementById('addSaveBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Menyimpan...';
+      const $saveBtn = $('#addSaveBtn');
+      $saveBtn.prop('disabled', true).text('Menyimpan...');
 
-      try {
-        const formData = new FormData(document.getElementById('addCategoryForm'));
-        const res = await fetch('<?= site_url("MasterData/KategoriRisiko/create") ?>', {
-          method: 'POST',
-          body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const result = await res.json();
+      const formData = new FormData($('#addCategoryForm')[0]);
 
-        if (result.status === 'success') {
-          closeAddCategoryModal();
-          if (typeof showToast === 'function') {
-            showToast(result.message);
+      $.ajax({
+        url: '<?= site_url("MasterData/KategoriRisiko/create") ?>',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(result) {
+          if (result.status === 'success') {
+            closeAddCategoryModal();
+            if (typeof showToast === 'function') {
+              showToast(result.message);
+            }
+            // Refresh halaman agar struktur hirarki dan counter statistik terupdate sempurna
+            setTimeout(() => {
+              window.location.reload();
+            }, 600);
+          } else {
+            alert(result.message || 'Gagal menyimpan data.');
           }
-          // Refresh halaman agar struktur hirarki dan counter statistik terupdate sempurna
-          setTimeout(() => {
-            window.location.reload();
-          }, 600);
-        } else {
-          alert(result.message || 'Gagal menyimpan data.');
+        },
+        error: function() {
+          alert('Terjadi kesalahan koneksi saat menyimpan data baru.');
+        },
+        complete: function() {
+          $saveBtn.prop('disabled', false).text('Simpan Data Baru');
         }
-      } catch (err) {
-        alert('Terjadi kesalahan koneksi saat menyimpan data baru.');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Simpan Data Baru';
-      }
+      });
     }
 
     // =========================================================================
     // FITUR EDIT MODAL
     // =========================================================================
     function openEditCategoryModal(data) {
-      document.getElementById('editCategoryForm').reset();
+      $('#editCategoryForm')[0].reset();
 
-      document.getElementById('editId').value       = data.id || '';
-      document.getElementById('editLevel').value    = data.level || '';
-      document.getElementById('editCode').value     = data.code || '';
-      document.getElementById('editName').value     = data.nama || '';
-      document.getElementById('editDefinisi').value = data.definisi || '';
+      $('#editId').val(data.id || '');
+      $('#editLevel').val(data.level || '');
+      $('#editCode').val(data.code || '');
+      $('#editName').val(data.nama || '');
+      $('#editDefinisi').val(data.definisi || '');
 
-      document.getElementById('editModalEyebrow').textContent = `EDIT ${data.level || 'TAKSONOMI'}`;
-      document.getElementById('editModalTitle').textContent   = `Edit ${data.levelName || 'Kategori Risiko'}`;
+      $('#editModalEyebrow').text(`EDIT ${data.level || 'TAKSONOMI'}`);
+      $('#editModalTitle').text(`Edit ${data.levelName || 'Kategori Risiko'}`);
 
       let nameLabel = 'Nama Kategori';
       if (data.level === 'T1') nameLabel = 'Tema Risiko';
       else if (data.level === 'T2') nameLabel = 'Kategori Risiko KBUMN';
       else if (data.level === 'T3') nameLabel = 'Kategori Risiko Perusahaan';
       else if (data.level === 'T4') nameLabel = 'Peristiwa Risiko Perusahaan';
-      document.getElementById('editNameLabel').textContent = nameLabel;
+      $('#editNameLabel').text(nameLabel);
 
-      document.getElementById('editCategoryModal').classList.add('show');
-      setTimeout(() => document.getElementById('editName').focus(), 50);
+      $('#editCategoryModal').addClass('show');
+      setTimeout(() => $('#editName').trigger('focus'), 50);
     }
 
     function closeEditCategoryModal() {
-      document.getElementById('editCategoryModal').classList.remove('show');
+      $('#editCategoryModal').removeClass('show');
+    }
+
+    function updateRowDom(id, code, nama, definisi, level) {
+      const $row = $('#row-' + id);
+      if ($row.length) {
+        $row.find('.code-text').text(code);
+        $row.find('.nama-text').text(nama);
+        $row.find('.definisi-text').text(definisi);
+
+        $row.attr('data-search', (code + ' ' + nama + ' ' + definisi).toLowerCase());
+
+        const $editBtn = $row.find('.btn-edit');
+        if ($editBtn.length) {
+          $editBtn.off('click').on('click', function() {
+            openEditCategoryModal({
+              id, code, nama, definisi, level,
+              levelName: $('#editModalTitle').text().replace('Edit ', '')
+            });
+          });
+        }
+      }
     }
 
     async function submitEditCategory(e) {
-      e.preventDefault();
+      if (e && e.preventDefault) e.preventDefault();
 
-      const id       = document.getElementById('editId').value;
-      const code     = document.getElementById('editCode').value.trim();
-      const nama     = document.getElementById('editName').value.trim();
-      const definisi = document.getElementById('editDefinisi').value.trim();
-      const level    = document.getElementById('editLevel').value;
+      const id       = $('#editId').val();
+      const code     = $.trim($('#editCode').val());
+      const nama     = $.trim($('#editName').val());
+      const definisi = $.trim($('#editDefinisi').val());
+      const level    = $('#editLevel').val();
 
-      const saveBtn  = document.getElementById('editSaveBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Menyimpan...';
+      const $saveBtn = $('#editSaveBtn');
+      $saveBtn.prop('disabled', true).text('Menyimpan...');
 
-      try {
-        const formData = new FormData(document.getElementById('editCategoryForm'));
-        const res = await fetch('<?= site_url("MasterData/KategoriRisiko/update") ?>', {
-          method: 'POST',
-          body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const result = await res.json();
+      const formData = new FormData($('#editCategoryForm')[0]);
 
-        // Update DOM row langsung di tabel secara real-time
-        const row = document.getElementById(`row-${id}`);
-        if (row) {
-          const codeEl = row.querySelector('.code-text');
-          const namaEl = row.querySelector('.nama-text');
-          const defEl  = row.querySelector('.definisi-text');
+      $.ajax({
+        url: '<?= site_url("MasterData/KategoriRisiko/update") ?>',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(result) {
+          updateRowDom(id, code, nama, definisi, level);
+          closeEditCategoryModal();
 
-          if (codeEl) codeEl.textContent = code;
-          if (namaEl) namaEl.textContent = nama;
-          if (defEl)  defEl.textContent  = definisi;
-
-          row.setAttribute('data-search', (code + ' ' + nama + ' ' + definisi).toLowerCase());
-
-          const editBtn = row.querySelector('.btn-edit');
-          if (editBtn) {
-            editBtn.onclick = () => openEditCategoryModal({
-              id, code, nama, definisi, level,
-              levelName: document.getElementById('editModalTitle').textContent.replace('Edit ', '')
-            });
+          if (typeof showToast === 'function') {
+            showToast(result.message || `Data [${code}] berhasil diperbarui.`);
           }
+        },
+        error: function() {
+          updateRowDom(id, code, nama, definisi, level);
+          closeEditCategoryModal();
+          if (typeof showToast === 'function') {
+            showToast(`Perubahan [${code}] berhasil disimpan.`);
+          }
+        },
+        complete: function() {
+          $saveBtn.prop('disabled', false).text('Simpan Perubahan');
         }
-
-        closeEditCategoryModal();
-
-        if (typeof showToast === 'function') {
-          showToast(result.message || `Data [${code}] berhasil diperbarui.`);
-        }
-      } catch (err) {
-        closeEditCategoryModal();
-        if (typeof showToast === 'function') {
-          showToast(`Perubahan [${code}] berhasil disimpan.`);
-        }
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Simpan Perubahan';
-      }
+      });
     }
 
-    // Modal listeners: klik backdrop & tombol Escape
-    ['addCategoryModal', 'editCategoryModal'].forEach(mId => {
-      const el = document.getElementById(mId);
-      if (el) {
-        el.addEventListener('click', e => {
-          if (e.target.id === mId) {
-            if (mId === 'addCategoryModal') closeAddCategoryModal();
-            else closeEditCategoryModal();
-          }
-        });
-      }
-    });
+    // jQuery Document Ready Bindings
+    $(function() {
+      // Form submits
+      $('#addCategoryForm').on('submit', submitAddCategory);
+      $('#editCategoryForm').on('submit', submitEditCategory);
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        closeAddCategoryModal();
-        closeEditCategoryModal();
-      }
+      // Search real-time input
+      $('#categorySearch').on('keyup input', function() {
+        searchCategoryTable($(this).val());
+      });
+
+      // Modal listeners: klik backdrop
+      $('#addCategoryModal, #editCategoryModal').on('click', function(e) {
+        if (e.target === this) {
+          if ($(this).attr('id') === 'addCategoryModal') closeAddCategoryModal();
+          else closeEditCategoryModal();
+        }
+      });
+
+      // Keyboard Escape listener
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          closeAddCategoryModal();
+          closeEditCategoryModal();
+        }
+      });
     });
   </script>
 

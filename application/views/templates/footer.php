@@ -11,33 +11,37 @@ defined('BASEPATH') OR exit('No direct script access allowed');
   <!-- Toast Notification Container -->
   <div id="toast" class="toast"><?= htmlspecialchars($toast_message ?? 'Perubahan berhasil disimpan') ?></div>
 
-  <!-- Common Responsive & Utility Scripts -->
+  <!-- Common Responsive & Utility Scripts (jQuery 3) -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    $(function() {
       // Responsive sidebar toggle
-      const menuBtn = document.querySelector('.menu');
-      const sidebarEl = document.querySelector('.sidebar');
-      if (menuBtn && sidebarEl) {
-        menuBtn.onclick = (e) => {
+      const $menuBtn = $('.menu');
+      const $sidebar = $('.sidebar');
+      if ($menuBtn.length && $sidebar.length) {
+        $menuBtn.on('click', function(e) {
           e.stopPropagation();
-          sidebarEl.classList.toggle('open');
-        };
+          $sidebar.toggleClass('open');
+        });
         // Auto-close sidebar jika klik di luar area sidebar pada mobile screen
-        document.addEventListener('click', (e) => {
-          if (window.innerWidth <= 760 && !sidebarEl.contains(e.target) && !menuBtn.contains(e.target) && sidebarEl.classList.contains('open')) {
-            sidebarEl.classList.remove('open');
+        $(document).on('click', function(e) {
+          if ($(window).width() <= 760 && !$sidebar.is(e.target) && !$sidebar.has(e.target).length && !$menuBtn.is(e.target) && !$menuBtn.has(e.target).length && $sidebar.hasClass('open')) {
+            $sidebar.removeClass('open');
           }
         });
       }
     });
 
     // Global Toast Notification Helper
+    let toastTimeout = null;
     function showToast(msg) {
-      const t = document.getElementById('toast');
-      if (t) {
-        if (msg) t.textContent = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2600);
+      const $t = $('#toast');
+      if ($t.length) {
+        if (msg) $t.text(msg);
+        $t.addClass('show');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function() {
+          $t.removeClass('show');
+        }, 2600);
       }
     }
   </script>
@@ -84,102 +88,118 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
   <script>
     // =========================================================================
-    // DROPDOWN PROFIL (klik avatar -> tampil menu "Change Password")
+    // DROPDOWN PROFIL (jQuery 3)
     // =========================================================================
     function toggleProfileMenu(e) {
-      e.stopPropagation();
-      const menu = document.getElementById('profileMenu');
-      if (!menu) return;
-      const open = menu.classList.toggle('open');
-      document.getElementById('profileMenuBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (e && e.stopPropagation) e.stopPropagation();
+      const $menu = $('#profileMenu');
+      if (!$menu.length) return;
+      const isOpen = $menu.toggleClass('open').hasClass('open');
+      $('#profileMenuBtn').attr('aria-expanded', isOpen ? 'true' : 'false');
     }
 
     function closeProfileMenu() {
-      const menu = document.getElementById('profileMenu');
-      if (!menu) return;
-      menu.classList.remove('open');
-      document.getElementById('profileMenuBtn').setAttribute('aria-expanded', 'false');
+      const $menu = $('#profileMenu');
+      if (!$menu.length) return;
+      $menu.removeClass('open');
+      $('#profileMenuBtn').attr('aria-expanded', 'false');
     }
 
     // Klik di luar dropdown menutup menu
-    document.addEventListener('click', e => {
-      const menu = document.getElementById('profileMenu');
-      if (menu && !menu.contains(e.target)) closeProfileMenu();
+    $(document).on('click', function(e) {
+      const $menu = $('#profileMenu');
+      if ($menu.length && !$menu.is(e.target) && !$menu.has(e.target).length) {
+        closeProfileMenu();
+      }
     });
 
     // =========================================================================
-    // MODAL GANTI PASSWORD
+    // MODAL GANTI PASSWORD (jQuery 3)
     // =========================================================================
     function openChangePasswordModal() {
-      document.getElementById('changePasswordForm').reset();
+      $('#changePasswordForm')[0].reset();
       toggleChangePasswordVisibility(false);
       showChangePasswordError('');
-      document.getElementById('changePasswordModal').classList.add('show');
-      setTimeout(() => document.getElementById('cpCurrent').focus(), 50);
+      $('#changePasswordModal').addClass('show');
+      setTimeout(function() { $('#cpCurrent').trigger('focus'); }, 50);
     }
 
     function closeChangePasswordModal() {
-      document.getElementById('changePasswordModal').classList.remove('show');
+      $('#changePasswordModal').removeClass('show');
     }
 
     function toggleChangePasswordVisibility(show) {
-      ['cpCurrent', 'cpNew', 'cpConfirm'].forEach(id => {
-        document.getElementById(id).type = show ? 'text' : 'password';
-      });
-      document.getElementById('cpShow').checked = show;
+      $('#cpCurrent, #cpNew, #cpConfirm').attr('type', show ? 'text' : 'password');
+      $('#cpShow').prop('checked', show);
     }
 
     function showChangePasswordError(msg) {
-      const el = document.getElementById('cpError');
-      el.textContent = msg;
-      el.style.display = msg ? 'block' : 'none';
+      const $el = $('#cpError');
+      if (msg) {
+        $el.text(msg).show();
+      } else {
+        $el.hide().text('');
+      }
     }
 
-    async function submitChangePassword(e) {
-      e.preventDefault();
-      const current = document.getElementById('cpCurrent').value.trim();
-      const newPwd  = document.getElementById('cpNew').value.trim();
-      const confirm = document.getElementById('cpConfirm').value.trim();
+    function submitChangePassword(e) {
+      if (e && e.preventDefault) e.preventDefault();
+
+      const current = $.trim($('#cpCurrent').val());
+      const newPwd  = $.trim($('#new_password, #cpNew').val());
+      const confirm = $.trim($('#confirm_password, #cpConfirm').val());
 
       if (newPwd.length < 6)   return showChangePasswordError('Password baru minimal 6 karakter.');
       if (newPwd !== confirm)  return showChangePasswordError('Konfirmasi password baru tidak sama.');
       if (newPwd === current)  return showChangePasswordError('Password baru harus berbeda dari password lama.');
       showChangePasswordError('');
 
-      const btn = document.getElementById('cpSubmitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Menyimpan...';
+      const $btn = $('#cpSubmitBtn');
+      $btn.prop('disabled', true).text('Menyimpan...');
 
-      try {
-        const res = await fetch('<?= site_url("auth/change_password") ?>', {
-          method: 'POST',
-          body: new FormData(document.getElementById('changePasswordForm')),
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const data = await res.json();
-        if (data.status === 'success') {
-          closeChangePasswordModal();
-          showToast(data.message);
-        } else {
-          showChangePasswordError(data.message || 'Gagal mengganti password.');
+      const formData = new FormData($('#changePasswordForm')[0]);
+
+      $.ajax({
+        url: '<?= site_url("auth/change_password") ?>',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(data) {
+          if (data.status === 'success') {
+            closeChangePasswordModal();
+            showToast(data.message);
+          } else {
+            showChangePasswordError(data.message || 'Gagal mengganti password.');
+          }
+        },
+        error: function() {
+          showChangePasswordError('Terjadi kesalahan koneksi.');
+        },
+        complete: function() {
+          $btn.prop('disabled', false).text('Simpan Password');
         }
-      } catch (err) {
-        showChangePasswordError('Terjadi kesalahan koneksi.');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Simpan Password';
-      }
+      });
     }
 
-    // Tutup modal dengan klik backdrop; Escape menutup modal & dropdown
-    document.getElementById('changePasswordModal').addEventListener('click', e => {
-      if (e.target.id === 'changePasswordModal') closeChangePasswordModal();
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        closeChangePasswordModal();
-        closeProfileMenu();
-      }
+    $(function() {
+      // Form submit binding
+      $('#changePasswordForm').on('submit', submitChangePassword);
+
+      // Tutup modal dengan klik backdrop
+      $('#changePasswordModal').on('click', function(e) {
+        if (e.target === this) closeChangePasswordModal();
+      });
+
+      // Escape key listener
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          closeChangePasswordModal();
+          closeProfileMenu();
+        }
+      });
     });
   </script>
 

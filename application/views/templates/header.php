@@ -24,6 +24,9 @@ $page_title = $title ?? 'IFPRO Risk Command Center';
   <!-- CSS Stylesheet (IFPRO Theme & Overrides) -->
   <link rel="stylesheet" href="<?= base_url('styles.css?v=' . (@filemtime(FCPATH . 'styles.css') ?: '1')) ?>" />
 
+  <!-- jQuery 3 -->
+  <script src="<?= base_url('assets/js/jquery.min.js') ?>"></script>
+
   <?php if (!empty($extra_css)): ?>
     <?= $extra_css ?>
   <?php endif; ?>
