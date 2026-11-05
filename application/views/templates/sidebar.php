@@ -64,6 +64,9 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
     <a href="<?= site_url('MasterData/SumberRisiko') ?>" class="nav <?= ($active_menu === 'm_sumber_risiko') ? 'active' : '' ?>" style="text-decoration:none">
         <span>≡</span> Sumber Risiko
     </a>
+    <a href="<?= site_url('MasterData/KriteriaDampakKemungkinan') ?>" class="nav <?= ($active_menu === 'm_kriteria_dampak_kemungkinan') ? 'active' : '' ?>" style="text-decoration:none">
+        <span>≡</span> Kriteria Dampak & Kemungkinan
+    </a>
 
     <!-- MENU SETTINGS (Hanya Tampil untuk Administrator) -->
     <?php if ($user_level === 'admin'): ?>

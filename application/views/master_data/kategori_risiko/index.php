@@ -139,7 +139,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
                       <!-- Sub-table Title Bar -->
                       <div class="subtable-title-bar">
                         <div>
-                          <span class="tag-level">T2</span>
+                          <!-- <span class="tag-level">T2</span> -->
                           <span>Kategori Risiko KBUMN (T2) — Induk: <b class="parent-title-text"><?= htmlspecialchars($c1['code']) ?>. <?= htmlspecialchars($c1['nama']) ?></b></span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -213,7 +213,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
                                     <!-- Sub-table Title Bar -->
                                     <div class="subtable-title-bar">
                                       <div>
-                                        <span class="tag-level">T3</span>
+                                        <!-- <span class="tag-level">T3</span> -->
                                         <span>Kategori Risiko Perusahaan (T3) — Induk: <b class="parent-title-text"><?= htmlspecialchars($c2['code']) ?>. <?= htmlspecialchars($c2['nama']) ?></b></span>
                                       </div>
                                       <div style="display: flex; align-items: center; gap: 10px;">
@@ -287,7 +287,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
                                                   <!-- Sub-table Title Bar -->
                                                   <div class="subtable-title-bar">
                                                     <div>
-                                                      <span class="tag-level">T4</span>
+                                                      <!-- <span class="tag-level">T4</span> -->
                                                       <span>Peristiwa Risiko Perusahaan (T4) — Induk: <b class="parent-title-text"><?= htmlspecialchars($c3['code']) ?>. <?= htmlspecialchars($c3['nama']) ?></b></span>
                                                     </div>
                                                     <div style="display: flex; align-items: center; gap: 10px;">
