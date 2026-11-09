@@ -21,73 +21,81 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
 <aside class="sidebar">
   <div class="brand">
     <span class="brandmark">IF</span>
-    <div>
+    <div class="brand-text">
       <strong>IFPRO</strong>
       <small>Risk Command Center</small>
     </div>
+    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+      <span>«</span>
+    </button>
   </div>
   
   <nav>
     <?php if ($is_dashboard): ?>
-      <button class="nav <?= ($active_menu === 'overview') ? 'active' : '' ?>" data-view="overview">
-        <span>◫</span> Executive Overview
+      <button class="nav <?= ($active_menu === 'overview') ? 'active' : '' ?>" data-view="overview" title="Executive Overview">
+        <span class="nav-icon">◫</span> <span class="nav-label">Executive Overview</span>
       </button>
-      <button class="nav <?= ($active_menu === 'register') ? 'active' : '' ?>" data-view="register">
-        <span>≡</span> Risk Register
+      <button class="nav <?= ($active_menu === 'register') ? 'active' : '' ?>" data-view="register" title="Risk Register">
+        <span class="nav-icon">≡</span> <span class="nav-label">Risk Register</span>
       </button>
-      <button class="nav <?= ($active_menu === 'mitigation') ? 'active' : '' ?>" data-view="mitigation">
-        <span>✓</span> Mitigation Monitor
+      <button class="nav <?= ($active_menu === 'mitigation') ? 'active' : '' ?>" data-view="mitigation" title="Mitigation Monitor">
+        <span class="nav-icon">✓</span> <span class="nav-label">Mitigation Monitor</span>
       </button>
-      <button class="nav <?= ($active_menu === 'kri') ? 'active' : '' ?>" data-view="kri">
-        <span>⌁</span> Key Risk Indicators
+      <button class="nav <?= ($active_menu === 'kri') ? 'active' : '' ?>" data-view="kri" title="Key Risk Indicators">
+        <span class="nav-icon">⌁</span> <span class="nav-label">Key Risk Indicators</span>
       </button>
     <?php else: ?>
-      <a href="<?= site_url('menrisk') ?>" class="nav" style="text-decoration:none">
-        <span>◫</span> Executive Overview
+      <a href="<?= site_url('menrisk') ?>" class="nav" style="text-decoration:none" title="Executive Overview">
+        <span class="nav-icon">◫</span> <span class="nav-label">Executive Overview</span>
       </a>
-      <a href="<?= site_url('menrisk') ?>#register" class="nav" style="text-decoration:none">
-        <span>≡</span> Risk Register
+      <a href="<?= site_url('menrisk') ?>#register" class="nav" style="text-decoration:none" title="Risk Register">
+        <span class="nav-icon">≡</span> <span class="nav-label">Risk Register</span>
       </a>
-      <a href="<?= site_url('menrisk') ?>#mitigation" class="nav" style="text-decoration:none">
-        <span>✓</span> Mitigation Monitor
+      <a href="<?= site_url('menrisk') ?>#mitigation" class="nav" style="text-decoration:none" title="Mitigation Monitor">
+        <span class="nav-icon">✓</span> <span class="nav-label">Mitigation Monitor</span>
       </a>
-      <a href="<?= site_url('menrisk') ?>#kri" class="nav" style="text-decoration:none">
-        <span>⌁</span> Key Risk Indicators
+      <a href="<?= site_url('menrisk') ?>#kri" class="nav" style="text-decoration:none" title="Key Risk Indicators">
+        <span class="nav-icon">⌁</span> <span class="nav-label">Key Risk Indicators</span>
       </a>
     <?php endif; ?>
 
-    <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="nav <?= ($active_menu === 'daftar_profil_risiko') ? 'active' : '' ?>" style="text-decoration:none">
-      <span>≣</span> Profile Risiko
+    <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="nav <?= ($active_menu === 'daftar_profil_risiko') ? 'active' : '' ?>" style="text-decoration:none" title="Profile Risiko">
+      <span class="nav-icon">≣</span> <span class="nav-label">Profile Risiko</span>
     </a>
 
     <!-- MENU MASTER DATA -->
     <div class="sidebar-section">MASTER DATA</div>
-    <a href="<?= site_url('MasterData/KategoriRisiko') ?>" class="nav <?= ($active_menu === 'm_kategori_risiko') ? 'active' : '' ?>" style="text-decoration:none">
-        <span>≡</span> Kategori Risiko
+    <a href="<?= site_url('MasterData/KategoriRisiko') ?>" class="nav <?= ($active_menu === 'm_kategori_risiko') ? 'active' : '' ?>" style="text-decoration:none" title="Kategori Risiko">
+        <span class="nav-icon">≡</span> <span class="nav-label">Kategori Risiko</span>
     </a>
-    <a href="<?= site_url('MasterData/SumberRisiko') ?>" class="nav <?= ($active_menu === 'm_sumber_risiko') ? 'active' : '' ?>" style="text-decoration:none">
-        <span>≡</span> Sumber Risiko
+    <a href="<?= site_url('MasterData/SumberRisiko') ?>" class="nav <?= ($active_menu === 'm_sumber_risiko') ? 'active' : '' ?>" style="text-decoration:none" title="Sumber Risiko">
+        <span class="nav-icon">≡</span> <span class="nav-label">Sumber Risiko</span>
     </a>
-    <a href="<?= site_url('MasterData/KriteriaDampakKemungkinan') ?>" class="nav <?= ($active_menu === 'm_kriteria_dampak_kemungkinan') ? 'active' : '' ?>" style="text-decoration:none">
-        <span>≡</span> Kriteria Dampak & Kemungkinan
+    <a href="<?= site_url('MasterData/KriteriaDampakKemungkinan') ?>" class="nav <?= ($active_menu === 'm_kriteria_dampak_kemungkinan') ? 'active' : '' ?>" style="text-decoration:none" title="Kriteria Dampak & Kemungkinan">
+        <span class="nav-icon">≡</span> <span class="nav-label">Kriteria Dampak & Kemungkinan</span>
     </a>
 
     <!-- MENU SETTINGS (Hanya Tampil untuk Administrator) -->
     <?php if ($user_level === 'admin'): ?>
       <div class="sidebar-section">SETTINGS</div>
-      <a href="<?= site_url('settings/user') ?>" class="nav <?= ($active_menu === 'user') ? 'active' : '' ?>" style="text-decoration:none">
-        <span>⌁</span> User
+      <a href="<?= site_url('settings/user') ?>" class="nav <?= ($active_menu === 'user') ? 'active' : '' ?>" style="text-decoration:none" title="User Settings">
+        <span class="nav-icon">⌁</span> <span class="nav-label">User</span>
       </a>
-      <a href="<?= site_url('settings/department') ?>" class="nav <?= ($active_menu === 'department') ? 'active' : '' ?>" style="text-decoration:none">
-        <span>⌁</span> Department
+      <a href="<?= site_url('settings/department') ?>" class="nav <?= ($active_menu === 'department') ? 'active' : '' ?>" style="text-decoration:none" title="Department Settings">
+        <span class="nav-icon">⌁</span> <span class="nav-label">Department</span>
       </a>
     <?php endif; ?>
   </nav>
 
   <div class="sidebar-foot">
-    <small>LOGGED IN USER</small>
-    <strong><?= htmlspecialchars($user_nama) ?></strong>
-    <span style="font-size:11px;color:#29b6af;text-transform:uppercase">Role: <?= htmlspecialchars($user_level) ?></span>
-    <a href="<?= site_url('auth/logout') ?>" style="color:#ff8d94;font-size:12px;margin-top:6px;text-decoration:none;font-weight:700">⎋ Keluar / Logout</a>
+    <div class="foot-user-info">
+      <small>LOGGED IN USER</small>
+      <strong><?= htmlspecialchars($user_nama) ?></strong>
+      <span style="font-size:11px;color:#29b6af;text-transform:uppercase">Role: <?= htmlspecialchars($user_level) ?></span>
+    </div>
+    <a href="<?= site_url('auth/logout') ?>" class="btn-logout" title="Keluar / Logout" style="color:#ff8d94;font-size:12px;margin-top:6px;text-decoration:none;font-weight:700">
+      <span class="logout-icon">⎋</span>
+      <span class="logout-text">Keluar / Logout</span>
+    </a>
   </div>
 </aside>

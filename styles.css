@@ -128,12 +128,44 @@ button:focus:not(:focus-visible) {
   display: flex;
   flex-direction: column;
   z-index: 20;
+  transition: width .25s cubic-bezier(0.4, 0, 0.2, 1), padding .25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 8px 30px;
+  position: relative;
+}
+.brand-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity .2s ease, width .2s ease;
+}
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #9fb4c9;
+  cursor: pointer;
+  transition: all .15s ease;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 .brandmark {
   display: grid;
@@ -172,20 +204,31 @@ button:focus:not(:focus-visible) {
   border: 0;
   background: transparent;
   color: #b7c6d7;
-  padding: 12px 13px;
+  padding: 8px 12px;
   border-radius: 8px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
+  gap: 10px;
   transition: background .15s ease, color .15s ease;
 }
-.nav span {
-  display: inline-block;
-  width: 25px;
-  font-size: 17px;
+.nav .nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.nav .nav-label {
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .nav:hover,
 .nav.active {
@@ -216,6 +259,100 @@ main {
   margin-left: 246px;
   min-height: 100vh;
   padding: 0 28px 50px;
+  transition: margin-left .25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- SIDEBAR COLLAPSED (DESKTOP) --- */
+@media (min-width: 761px) {
+  body.sidebar-collapsed .sidebar,
+  html.sidebar-is-collapsed body .sidebar {
+    width: 72px;
+    padding: 24px 8px;
+  }
+  body.sidebar-collapsed main,
+  html.sidebar-is-collapsed body main {
+    margin-left: 72px;
+  }
+  body.sidebar-collapsed .brand,
+  html.sidebar-is-collapsed body .brand {
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 18px;
+    gap: 8px;
+  }
+  body.sidebar-collapsed .brand-text,
+  html.sidebar-is-collapsed body .brand-text {
+    display: none !important;
+  }
+  body.sidebar-collapsed .sidebar-toggle-btn,
+  html.sidebar-is-collapsed body .sidebar-toggle-btn {
+    margin: 0 auto;
+    width: 28px;
+    height: 24px;
+  }
+  body.sidebar-collapsed .sidebar-section,
+  html.sidebar-is-collapsed body .sidebar-section {
+    font-size: 0 !important;
+    padding: 0 !important;
+    margin: 8px 4px !important;
+    height: 1px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+  }
+  body.sidebar-collapsed .nav,
+  html.sidebar-is-collapsed body .nav {
+    justify-content: center;
+    padding: 10px 0;
+    width: 100%;
+    text-align: center;
+    gap: 0;
+  }
+  body.sidebar-collapsed .nav .nav-label,
+  html.sidebar-is-collapsed body .nav .nav-label {
+    display: none !important;
+  }
+  body.sidebar-collapsed .nav .nav-icon,
+  html.sidebar-is-collapsed body .nav .nav-icon {
+    width: auto;
+    margin: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body.sidebar-collapsed .sidebar-foot,
+  html.sidebar-is-collapsed body .sidebar-foot {
+    padding: 14px 0;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  body.sidebar-collapsed .foot-user-info,
+  html.sidebar-is-collapsed body .foot-user-info,
+  body.sidebar-collapsed .logout-text,
+  html.sidebar-is-collapsed body .logout-text {
+    display: none !important;
+  }
+  body.sidebar-collapsed .btn-logout,
+  html.sidebar-is-collapsed body .btn-logout {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 141, 148, 0.1);
+    margin: 0 auto !important;
+    font-size: 18px !important;
+    line-height: 1;
+  }
+  body.sidebar-collapsed .btn-logout:hover,
+  html.sidebar-is-collapsed body .btn-logout:hover {
+    background: rgba(255, 141, 148, 0.25);
+  }
 }
 header {
   height: 115px;
@@ -1544,6 +1681,9 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 760px) {
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
   .sidebar {
     transform: translateX(-100%);
     transition: transform .25s ease;

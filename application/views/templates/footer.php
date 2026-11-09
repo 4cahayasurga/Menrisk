@@ -14,9 +14,43 @@ defined('BASEPATH') OR exit('No direct script access allowed');
   <!-- Common Responsive & Utility Scripts (jQuery 3) -->
   <script>
     $(function() {
-      // Responsive sidebar toggle
-      const $menuBtn = $('.menu');
       const $sidebar = $('.sidebar');
+      const $menuBtn = $('.menu');
+      const $toggleBtn = $('#sidebarToggleBtn');
+      const $body = $('body');
+
+      // 1. Inisialisasi state sidebar collapse dari localStorage
+      const isCollapsed = localStorage.getItem('ifpro_sidebar_collapsed') === 'true';
+      if (isCollapsed && $(window).width() > 760) {
+        $body.addClass('sidebar-collapsed');
+        document.documentElement.classList.add('sidebar-is-collapsed');
+        if ($toggleBtn.length) {
+          $toggleBtn.find('span').text('»');
+          $toggleBtn.attr('title', 'Expand Sidebar');
+        }
+      } else {
+        $body.removeClass('sidebar-collapsed');
+        document.documentElement.classList.remove('sidebar-is-collapsed');
+      }
+
+      // 2. Tombol toggle collapse/expand desktop
+      if ($toggleBtn.length) {
+        $toggleBtn.on('click', function(e) {
+          e.stopPropagation();
+          $body.toggleClass('sidebar-collapsed');
+          const collapsedNow = $body.hasClass('sidebar-collapsed');
+          if (collapsedNow) {
+            document.documentElement.classList.add('sidebar-is-collapsed');
+          } else {
+            document.documentElement.classList.remove('sidebar-is-collapsed');
+          }
+          localStorage.setItem('ifpro_sidebar_collapsed', collapsedNow);
+          $toggleBtn.find('span').text(collapsedNow ? '»' : '«');
+          $toggleBtn.attr('title', collapsedNow ? 'Expand Sidebar' : 'Collapse Sidebar');
+        });
+      }
+
+      // 3. Responsive mobile toggle (tombol hamburger)
       if ($menuBtn.length && $sidebar.length) {
         $menuBtn.on('click', function(e) {
           e.stopPropagation();

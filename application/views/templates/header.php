@@ -27,6 +27,15 @@ $page_title = $title ?? 'IFPRO Risk Command Center';
   <!-- jQuery 3 -->
   <script src="<?= base_url('assets/js/jquery.min.js') ?>"></script>
 
+  <!-- Prevent FOUC: Segera terapkan sidebar-collapsed jika sebelumnya disimpan di localStorage -->
+  <script>
+    try {
+      if (localStorage.getItem('ifpro_sidebar_collapsed') === 'true' && window.innerWidth > 760) {
+        document.documentElement.classList.add('sidebar-is-collapsed');
+      }
+    } catch(e) {}
+  </script>
+
   <?php if (!empty($extra_css)): ?>
     <?= $extra_css ?>
   <?php endif; ?>
