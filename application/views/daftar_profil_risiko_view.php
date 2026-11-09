@@ -64,6 +64,26 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
   color: #1e293b;
   line-height: 1.45;
 }
+.cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  line-height: 1.45;
+  max-height: 2.9em;
+}
+.cell-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  line-height: 1.45;
+  max-height: 4.35em;
+}
 .profil-table tbody tr:hover {
   background: #f8fafc;
 }
@@ -190,29 +210,63 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
               ?>
               <tr class="profil-row">
                 <td style="text-align: center; font-weight: 700; color: #64748b;"><?= $idx + 1 ?></td>
-                <td><strong><?= htmlspecialchars($row->sasaran ?? '-') ?></strong></td>
-                <td><?= htmlspecialchars($row->fungsi_kerja ?? '-') ?></td>
-                <td><strong style="color: var(--navy, #0f172a);"><?= htmlspecialchars($row->nama_risiko ?? '-') ?></strong></td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->sasaran ?? '') ?>">
+                    <strong><?= htmlspecialchars($row->sasaran ?? '-') ?></strong>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->fungsi_kerja ?? '') ?>">
+                    <?= htmlspecialchars($row->fungsi_kerja ?? '-') ?>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->nama_risiko ?? '') ?>">
+                    <strong style="color: var(--navy, #0f172a);"><?= htmlspecialchars($row->nama_risiko ?? '-') ?></strong>
+                  </div>
+                </td>
                 <td>
                   <?php if (!empty($row->kategori_risiko)): ?>
                     <span style="display:inline-block; background:#f1f5f9; color:#0f172a; font-weight:700; padding:2px 7px; border-radius:4px; font-size:11px; margin-bottom:3px;">
                       <?= htmlspecialchars($row->kategori_risiko) ?>
                     </span>
-                    <div style="font-size:12px; color:#475569;"><?= htmlspecialchars($row->kategori_risiko_nama ?? '') ?></div>
+                    <div class="cell-clamp" style="font-size:12px; color:#475569;" title="<?= htmlspecialchars($row->kategori_risiko_nama ?? '') ?>">
+                      <?= htmlspecialchars($row->kategori_risiko_nama ?? '') ?>
+                    </div>
                   <?php else: ?>
                     -
                   <?php endif; ?>
                 </td>
-                <td><?= nl2br(htmlspecialchars($row->peristiwa_risiko ?: '-')) ?></td>
-                <td><?= nl2br(htmlspecialchars($row->penyebab_risiko ?: '-')) ?></td>
-                <td><?= nl2br(htmlspecialchars($row->dampak_kualitatif ?: '-')) ?></td>
                 <td>
-                  <div style="font-weight: 600; color: #0f172a;"><?= htmlspecialchars($row->sumber_risiko_nama ?: '-') ?></div>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->peristiwa_risiko ?? '') ?>">
+                    <?= htmlspecialchars($row->peristiwa_risiko ?: '-') ?>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->penyebab_risiko ?? '') ?>">
+                    <?= htmlspecialchars($row->penyebab_risiko ?: '-') ?>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->dampak_kualitatif ?? '') ?>">
+                    <?= htmlspecialchars($row->dampak_kualitatif ?: '-') ?>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->sumber_risiko_nama ?? '') ?>" style="font-weight: 600; color: #0f172a;">
+                    <?= htmlspecialchars($row->sumber_risiko_nama ?: '-') ?>
+                  </div>
                   <?php if (!empty($row->faktor_sumber_nama)): ?>
-                    <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">Faktor: <?= htmlspecialchars($row->faktor_sumber_nama) ?></div>
+                    <div class="cell-clamp" title="Faktor: <?= htmlspecialchars($row->faktor_sumber_nama) ?>" style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                      Faktor: <?= htmlspecialchars($row->faktor_sumber_nama) ?>
+                    </div>
                   <?php endif; ?>
                 </td>
-                <td><?= nl2br(htmlspecialchars($row->kontrol_saat_ini ?: '-')) ?></td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->kontrol_saat_ini ?? '') ?>">
+                    <?= htmlspecialchars($row->kontrol_saat_ini ?: '-') ?>
+                  </div>
+                </td>
                 <td>
                   <?php if (!empty($row->efektifitas_kontrol)): ?>
                     <span class="badge-efektif <?= $efClass ?>"><?= htmlspecialchars($row->efektifitas_kontrol) ?></span>
@@ -220,7 +274,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                     -
                   <?php endif; ?>
                 </td>
-                <td><?= htmlspecialchars($row->periode_terpapar ?: '-') ?></td>
+                <td>
+                  <div class="cell-clamp" title="<?= htmlspecialchars($row->periode_terpapar ?? '') ?>">
+                    <?= htmlspecialchars($row->periode_terpapar ?: '-') ?>
+                  </div>
+                </td>
                 <td style="text-align: center;">
                   <div class="action-btn-group">
                     <a href="<?= site_url('menrisk/profil_risiko/' . (int)$row->id . '?mode=view') ?>" class="btn-act btn-act-view" title="Lihat Detail Formulir">
