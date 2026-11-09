@@ -43,12 +43,25 @@ class FormulirRisiko_model extends CI_Model {
                 fr.nama AS faktor_sumber_nama,
                 t1.kontrol_saat_ini,
                 t1.efektifitas_kontrol,
-                t1.periode_terpapar
+                t1.periode_terpapar,
+                t2.skala_risiko_inheren,
+                t4.skala_risiko_residual,
+                latest_mon.skala_risiko_realisasi AS skala_risiko_current,
+                latest_mon.periode AS periode_current,
+                latest_mon.tahun AS tahun_current
             FROM dbo.MNRSK_FormulirRisiko f
             LEFT JOIN dbo.MNRSK_IdentifikasiRisiko t1 ON t1.formulir_id = f.id
             LEFT JOIN dbo.MNRSK_KategoriRisiko_kat_perusahaan kat ON kat.code = t1.kategori_risiko
             LEFT JOIN dbo.MNRSK_SumberRisiko sr ON sr.id = t1.sumber_risiko
             LEFT JOIN dbo.MNRSK_FaktorRisiko fr ON fr.id = t1.faktor_sumber
+            LEFT JOIN dbo.MNRSK_KuantifikasiRisikoInheren t2 ON t2.formulir_id = f.id
+            LEFT JOIN dbo.MNRSK_KuantifikasiRisikoResidual t4 ON t4.formulir_id = f.id
+            OUTER APPLY (
+                SELECT TOP 1 pm.skala_risiko_realisasi, pm.periode, pm.tahun
+                FROM dbo.MNRSK_ProgressMonitoringProfileRisiko pm
+                WHERE pm.formulir_id = f.id
+                ORDER BY pm.tahun DESC, pm.id DESC
+            ) latest_mon
             ORDER BY f.id DESC
         ";
         $q = $this->db->query($sql);
@@ -96,6 +109,13 @@ class FormulirRisiko_model extends CI_Model {
                 t2.skala_dampak_inheren,
                 t2.skala_probabilitas,
                 t2.skala_risiko_inheren,
+
+                -- Data Kualitatif 1-5 untuk Kategori Dampak
+                CAST(sdk.skala_1 AS NVARCHAR(MAX)) AS kategori_dampak_skala_1,
+                CAST(sdk.skala_2 AS NVARCHAR(MAX)) AS kategori_dampak_skala_2,
+                CAST(sdk.skala_3 AS NVARCHAR(MAX)) AS kategori_dampak_skala_3,
+                CAST(sdk.skala_4 AS NVARCHAR(MAX)) AS kategori_dampak_skala_4,
+                CAST(sdk.skala_5 AS NVARCHAR(MAX)) AS kategori_dampak_skala_5,
 
                 -- Tab 3: Rencana Perlakuan Risiko
                 t3.operasi_perlakuan,
@@ -347,6 +367,143 @@ class FormulirRisiko_model extends CI_Model {
 
         $this->db->trans_commit();
         return true;
+    }
+
+    /**
+     * Ambil seluruh riwayat progress monitoring untuk 1 Formulir Profile Risiko
+     */
+    public function get_monitoring_by_formulir_id($formulir_id) {
+        $formulir_id = (int)$formulir_id;
+        if ($formulir_id <= 0) {
+            return [];
+        }
+
+        $sql = "
+            SELECT 
+                pm.*
+            FROM dbo.MNRSK_ProgressMonitoringProfileRisiko pm
+            WHERE pm.formulir_id = ?
+            ORDER BY pm.tahun DESC, pm.id DESC
+        ";
+        $q = $this->db->query($sql, [$formulir_id]);
+        return ($q && is_object($q)) ? $q->result() : [];
+    }
+
+    /**
+     * Ambil 1 record progress monitoring berdasarkan ID
+     */
+    public function get_monitoring_by_id($id) {
+        $id = (int)$id;
+        if ($id <= 0) {
+            return null;
+        }
+
+        $sql = "
+            SELECT * FROM dbo.MNRSK_ProgressMonitoringProfileRisiko
+            WHERE id = ?
+        ";
+        $q = $this->db->query($sql, [$id]);
+        return ($q && is_object($q) && $q->num_rows() > 0) ? $q->row() : null;
+    }
+
+    /**
+     * Simpan record progress monitoring baru
+     */
+    public function save_monitoring($data) {
+        $sql = "
+            INSERT INTO dbo.MNRSK_ProgressMonitoringProfileRisiko (
+                formulir_id, periode_tipe, tahun, periode,
+                status_progres_tindak_lanjut, realisasi_biaya,
+                proses_tindak_lanjut_persen, persentase_per_risiko,
+                eksposur_kuantitatif_current, skala_dampak_realisasi_current,
+                skala_probabilitas_realisasi_current, skala_risiko_realisasi,
+                kendala, action_plan, created_at, created_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)
+        ";
+
+        $ok = $this->db->query($sql, [
+            $data['formulir_id'],
+            $data['periode_tipe'] ?? 'triwulan',
+            $data['tahun'],
+            $data['periode'],
+            $data['status_progres_tindak_lanjut'] ?? null,
+            $data['realisasi_biaya'] ?? null,
+            $data['proses_tindak_lanjut_persen'] ?? null,
+            $data['persentase_per_risiko'] ?? null,
+            $data['eksposur_kuantitatif_current'] ?? null,
+            $data['skala_dampak_realisasi_current'] ?? null,
+            $data['skala_probabilitas_realisasi_current'] ?? null,
+            $data['skala_risiko_realisasi'] ?? null,
+            $data['kendala'] ?? null,
+            $data['action_plan'] ?? null,
+            $data['created_id'] ?? null
+        ]);
+
+        if ($ok) {
+            $qId = $this->db->query("SELECT CAST(SCOPE_IDENTITY() AS INT) AS new_id");
+            $rowId = ($qId && is_object($qId)) ? $qId->row() : null;
+            return $rowId ? (int)$rowId->new_id : true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Perbarui record progress monitoring
+     */
+    public function update_monitoring($id, $data) {
+        $id = (int)$id;
+        if ($id <= 0) {
+            return false;
+        }
+
+        $sql = "
+            UPDATE dbo.MNRSK_ProgressMonitoringProfileRisiko
+            SET 
+                periode_tipe = ?,
+                tahun = ?,
+                periode = ?,
+                status_progres_tindak_lanjut = ?,
+                realisasi_biaya = ?,
+                proses_tindak_lanjut_persen = ?,
+                persentase_per_risiko = ?,
+                eksposur_kuantitatif_current = ?,
+                skala_dampak_realisasi_current = ?,
+                skala_probabilitas_realisasi_current = ?,
+                skala_risiko_realisasi = ?,
+                kendala = ?,
+                action_plan = ?,
+                updated_at = GETDATE()
+            WHERE id = ?
+        ";
+
+        return $this->db->query($sql, [
+            $data['periode_tipe'] ?? 'triwulan',
+            $data['tahun'],
+            $data['periode'],
+            $data['status_progres_tindak_lanjut'] ?? null,
+            $data['realisasi_biaya'] ?? null,
+            $data['proses_tindak_lanjut_persen'] ?? null,
+            $data['persentase_per_risiko'] ?? null,
+            $data['eksposur_kuantitatif_current'] ?? null,
+            $data['skala_dampak_realisasi_current'] ?? null,
+            $data['skala_probabilitas_realisasi_current'] ?? null,
+            $data['skala_risiko_realisasi'] ?? null,
+            $data['kendala'] ?? null,
+            $data['action_plan'] ?? null,
+            $id
+        ]);
+    }
+
+    /**
+     * Hapus record progress monitoring
+     */
+    public function delete_monitoring($id) {
+        $id = (int)$id;
+        if ($id <= 0) {
+            return false;
+        }
+        return $this->db->query("DELETE FROM dbo.MNRSK_ProgressMonitoringProfileRisiko WHERE id = ?", [$id]);
     }
 }
 

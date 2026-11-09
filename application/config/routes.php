@@ -48,3 +48,9 @@ $route['menrisk/save_profil_risiko']        = 'menrisk/save_profil_risiko';
 $route['menrisk/daftar_profil_risiko']      = 'menrisk/daftar_profil_risiko';
 $route['menrisk/daftar-profil-risiko']      = 'menrisk/daftar_profil_risiko';
 $route['menrisk/detail_profil_risiko/(:num)'] = 'menrisk/detail_profil_risiko/$1';
+
+// Routes Progress Monitoring Profile Risiko
+$route['menrisk/monitoring_profil_risiko/(:num)']     = 'menrisk/monitoring_profil_risiko/$1';
+$route['menrisk/save_monitoring_profil_risiko']       = 'menrisk/save_monitoring_profil_risiko';
+$route['menrisk/detail_monitoring_profil_risiko/(:num)'] = 'menrisk/detail_monitoring_profil_risiko/$1';
+$route['menrisk/delete_monitoring_profil_risiko/(:num)'] = 'menrisk/delete_monitoring_profil_risiko/$1';

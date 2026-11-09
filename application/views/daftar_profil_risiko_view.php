@@ -43,7 +43,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
   width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
-  min-width: 1550px;
+  min-width: 1200px;
 }
 .profil-table thead th {
   background: #f8fafc;
@@ -142,6 +142,24 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
 .btn-act-edit:hover {
   background: #dbeafe;
 }
+.btn-act-monitoring {
+  background: #fdf4ff;
+  color: #a21caf;
+  border-color: #f0abfc;
+}
+.btn-act-monitoring:hover {
+  background: #fae8ff;
+}
+.badge-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 </style>
 
 <main>
@@ -180,18 +198,15 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
         <thead>
           <tr>
             <th style="width: 44px; text-align: center;">No</th>
+            <th style="width: 220px; text-align: center;">Aksi</th>
             <th style="min-width: 190px;">Sasaran / Target</th>
-            <th style="min-width: 150px;">Fungsi Kerja</th>
             <th style="min-width: 180px;">Nama Risiko</th>
-            <th style="min-width: 150px;">Kategori Risiko</th>
-            <th style="min-width: 200px;">Peristiwa Risiko</th>
-            <th style="min-width: 200px;">Penyebab Risiko</th>
-            <th style="min-width: 190px;">Dampak Kualitatif</th>
             <th style="min-width: 160px;">Sumber &amp; Faktor Risiko</th>
-            <th style="min-width: 180px;">Kontrol Saat Ini</th>
             <th style="min-width: 130px;">Efektifitas Kontrol</th>
             <th style="min-width: 130px;">Periode Terpapar</th>
-            <th style="width: 140px; text-align: center;">Aksi</th>
+            <th style="min-width: 130px; text-align: center;">Skala Inheren</th>
+            <th style="min-width: 130px; text-align: center;">Skala Residual</th>
+            <th style="min-width: 140px; text-align: center;">Skala Current</th>
           </tr>
         </thead>
         <tbody>
@@ -210,46 +225,27 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
               ?>
               <tr class="profil-row">
                 <td style="text-align: center; font-weight: 700; color: #64748b;"><?= $idx + 1 ?></td>
+                <td style="text-align: center;">
+                  <div class="action-btn-group">
+                    <a href="<?= site_url('menrisk/monitoring_profil_risiko/' . (int)$row->id) ?>" class="btn-act btn-act-monitoring" title="Progress Monitoring Profile Risiko">
+                      <span>📊</span>
+                    </a>
+                    <a href="<?= site_url('menrisk/profil_risiko/' . (int)$row->id . '?mode=view') ?>" class="btn-act btn-act-view" title="Lihat Detail Formulir">
+                      <span>👁</span>
+                    </a>
+                    <a href="<?= site_url('menrisk/profil_risiko/' . (int)$row->id) ?>" class="btn-act btn-act-edit" title="Edit Formulir">
+                      <span>✎</span>
+                    </a>
+                  </div>
+                </td>
                 <td>
                   <div class="cell-clamp" title="<?= htmlspecialchars($row->sasaran ?? '') ?>">
                     <strong><?= htmlspecialchars($row->sasaran ?? '-') ?></strong>
                   </div>
                 </td>
                 <td>
-                  <div class="cell-clamp" title="<?= htmlspecialchars($row->fungsi_kerja ?? '') ?>">
-                    <?= htmlspecialchars($row->fungsi_kerja ?? '-') ?>
-                  </div>
-                </td>
-                <td>
                   <div class="cell-clamp" title="<?= htmlspecialchars($row->nama_risiko ?? '') ?>">
                     <strong style="color: var(--navy, #0f172a);"><?= htmlspecialchars($row->nama_risiko ?? '-') ?></strong>
-                  </div>
-                </td>
-                <td>
-                  <?php if (!empty($row->kategori_risiko)): ?>
-                    <span style="display:inline-block; background:#f1f5f9; color:#0f172a; font-weight:700; padding:2px 7px; border-radius:4px; font-size:11px; margin-bottom:3px;">
-                      <?= htmlspecialchars($row->kategori_risiko) ?>
-                    </span>
-                    <div class="cell-clamp" style="font-size:12px; color:#475569;" title="<?= htmlspecialchars($row->kategori_risiko_nama ?? '') ?>">
-                      <?= htmlspecialchars($row->kategori_risiko_nama ?? '') ?>
-                    </div>
-                  <?php else: ?>
-                    -
-                  <?php endif; ?>
-                </td>
-                <td>
-                  <div class="cell-clamp" title="<?= htmlspecialchars($row->peristiwa_risiko ?? '') ?>">
-                    <?= htmlspecialchars($row->peristiwa_risiko ?: '-') ?>
-                  </div>
-                </td>
-                <td>
-                  <div class="cell-clamp" title="<?= htmlspecialchars($row->penyebab_risiko ?? '') ?>">
-                    <?= htmlspecialchars($row->penyebab_risiko ?: '-') ?>
-                  </div>
-                </td>
-                <td>
-                  <div class="cell-clamp" title="<?= htmlspecialchars($row->dampak_kualitatif ?? '') ?>">
-                    <?= htmlspecialchars($row->dampak_kualitatif ?: '-') ?>
                   </div>
                 </td>
                 <td>
@@ -263,11 +259,6 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                   <?php endif; ?>
                 </td>
                 <td>
-                  <div class="cell-clamp" title="<?= htmlspecialchars($row->kontrol_saat_ini ?? '') ?>">
-                    <?= htmlspecialchars($row->kontrol_saat_ini ?: '-') ?>
-                  </div>
-                </td>
-                <td>
                   <?php if (!empty($row->efektifitas_kontrol)): ?>
                     <span class="badge-efektif <?= $efClass ?>"><?= htmlspecialchars($row->efektifitas_kontrol) ?></span>
                   <?php else: ?>
@@ -279,21 +270,61 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                     <?= htmlspecialchars($row->periode_terpapar ?: '-') ?>
                   </div>
                 </td>
+                <?php
+                  // Helper level warna 1-25
+                  $getLevelStyle = function($score) {
+                      $s = (int)$score;
+                      if ($s <= 0) return ['bg' => '#f1f5f9', 'text' => '#64748b', 'label' => '-'];
+                      if ($s >= 21) return ['bg' => '#ff0000', 'text' => '#ffffff', 'label' => 'Hight'];
+                      if ($s >= 16) return ['bg' => '#ffbf00', 'text' => '#0f172a', 'label' => 'Mod. to High'];
+                      if ($s >= 12) return ['bg' => '#ffff00', 'text' => '#0f172a', 'label' => 'Moderate'];
+                      if ($s >= 6)  return ['bg' => '#92d14f', 'text' => '#0f172a', 'label' => 'Low to Mod.'];
+                      return ['bg' => '#00b04f', 'text' => '#ffffff', 'label' => 'Low'];
+                  };
+                  $inherenStyle = $getLevelStyle($row->skala_risiko_inheren);
+                  $residualStyle = $getLevelStyle($row->skala_risiko_residual);
+                  $currentStyle = $getLevelStyle($row->skala_risiko_current);
+                ?>
                 <td style="text-align: center;">
-                  <div class="action-btn-group">
-                    <a href="<?= site_url('menrisk/profil_risiko/' . (int)$row->id . '?mode=view') ?>" class="btn-act btn-act-view" title="Lihat Detail Formulir">
-                      <span>👁</span> Lihat
-                    </a>
-                    <a href="<?= site_url('menrisk/profil_risiko/' . (int)$row->id) ?>" class="btn-act btn-act-edit" title="Edit Formulir">
-                      <span>✎</span> Edit
-                    </a>
-                  </div>
+                  <?php if (!empty($row->skala_risiko_inheren)): ?>
+                    <span class="badge-score-pill" style="background: <?= $inherenStyle['bg'] ?>; color: <?= $inherenStyle['text'] ?>;" title="Skala Risiko Inheren: <?= (int)$row->skala_risiko_inheren ?> (<?= $inherenStyle['label'] ?>)">
+                      <span><?= (int)$row->skala_risiko_inheren ?></span>
+                      <small style="opacity: 0.9; font-size: 10px;">· <?= $inherenStyle['label'] ?></small>
+                    </span>
+                  <?php else: ?>
+                    <span style="color: #94a3b8;">-</span>
+                  <?php endif; ?>
+                </td>
+                <td style="text-align: center;">
+                  <?php if (!empty($row->skala_risiko_residual)): ?>
+                    <span class="badge-score-pill" style="background: <?= $residualStyle['bg'] ?>; color: <?= $residualStyle['text'] ?>;" title="Skala Risiko Residual (Target): <?= (int)$row->skala_risiko_residual ?> (<?= $residualStyle['label'] ?>)">
+                      <span><?= (int)$row->skala_risiko_residual ?></span>
+                      <small style="opacity: 0.9; font-size: 10px;">· <?= $residualStyle['label'] ?></small>
+                    </span>
+                  <?php else: ?>
+                    <span style="color: #94a3b8;">-</span>
+                  <?php endif; ?>
+                </td>
+                <td style="text-align: center;">
+                  <?php if (!empty($row->skala_risiko_current)): ?>
+                    <span class="badge-score-pill" style="background: <?= $currentStyle['bg'] ?>; color: <?= $currentStyle['text'] ?>;" title="Skala Risiko Current (Terbaru dari Progress Monitoring): <?= (int)$row->skala_risiko_current ?> (<?= $currentStyle['label'] ?>) - <?= htmlspecialchars($row->periode_current ?? '') ?> <?= htmlspecialchars($row->tahun_current ?? '') ?>">
+                      <span><?= (int)$row->skala_risiko_current ?></span>
+                      <small style="opacity: 0.9; font-size: 10px;">· <?= $currentStyle['label'] ?></small>
+                    </span>
+                    <?php if (!empty($row->periode_current)): ?>
+                      <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">
+                        <?= htmlspecialchars($row->periode_current) ?> <?= htmlspecialchars($row->tahun_current ?? '') ?>
+                      </div>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <span style="font-size: 11px; color: #94a3b8; font-style: italic;">Belum ada progres</span>
+                  <?php endif; ?>
                 </td>
               </tr>
             <?php endforeach; ?>
           <?php else: ?>
             <tr id="emptyProfilRow">
-              <td colspan="13" style="text-align: center; padding: 36px 16px; color: #64748b;">
+              <td colspan="11" style="text-align: center; padding: 36px 16px; color: #64748b;">
                 Belum ada data Formulir Profile Risiko yang disimpan. Klik tombol <b>+ Buat Profile Risiko Baru</b> di kanan atas untuk menambahkan data.
               </td>
             </tr>

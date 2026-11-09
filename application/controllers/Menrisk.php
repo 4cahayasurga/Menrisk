@@ -532,4 +532,153 @@ class Menrisk extends CI_Controller {
                  'redirect_url' => site_url('menrisk/daftar_profil_risiko')
              ]));
     }
+
+    /**
+     * Halaman Progress Monitoring Profile Risiko (Tabel Riwayat Monitoring + Formulir Pengisian)
+     */
+    public function monitoring_profil_risiko($formulir_id) {
+        $this->load->model('FormulirRisiko_model');
+
+        $formulir_id = (int)$formulir_id;
+        $formulir = $this->FormulirRisiko_model->get_formulir_by_id($formulir_id);
+
+        if (!$formulir) {
+            show_404();
+            return;
+        }
+
+        $monitoring_list = $this->FormulirRisiko_model->get_monitoring_by_formulir_id($formulir_id);
+
+        // Skala Probabilitas untuk Pilihan Skala Probabilitas Realisasi Current
+        $qProb = $this->db->query("SELECT id, CAST(parameter AS NVARCHAR(MAX)) AS parameter, CAST(skala_1 AS NVARCHAR(MAX)) AS skala_1, CAST(skala_2 AS NVARCHAR(MAX)) AS skala_2, CAST(skala_3 AS NVARCHAR(MAX)) AS skala_3, CAST(skala_4 AS NVARCHAR(MAX)) AS skala_4, CAST(skala_5 AS NVARCHAR(MAX)) AS skala_5 FROM dbo.MNRSK_SkalaProbabilitas ORDER BY id ASC");
+        $skala_probabilitas = ($qProb && is_object($qProb)) ? $qProb->result() : [];
+
+        $data = [
+            'title'              => 'Progress Monitoring Profile Risiko — IFPRO Command Center',
+            'current_user'       => [
+                'nama'  => $this->session->userdata('nama'),
+                'level' => $this->session->userdata('level')
+            ],
+            'active_menu'        => 'daftar_profil_risiko',
+            'is_dashboard'       => false,
+            'formulir'           => $formulir,
+            'monitoring_list'    => $monitoring_list,
+            'skala_probabilitas' => $skala_probabilitas
+        ];
+
+        $this->load->view('monitoring_profil_risiko_view', $data);
+    }
+
+    /**
+     * Endpoint AJAX untuk mengambil data 1 record monitoring (untuk Edit modal)
+     */
+    public function detail_monitoring_profil_risiko($id) {
+        $this->load->model('FormulirRisiko_model');
+        $item = $this->FormulirRisiko_model->get_monitoring_by_id((int)$id);
+
+        if (!$item) {
+            return $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Data progress monitoring tidak ditemukan.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status' => 'success',
+                'data'   => $item
+            ]));
+    }
+
+    /**
+     * Endpoint AJAX untuk menyimpan / memperbarui data Progress Monitoring Profile Risiko
+     */
+    public function save_monitoring_profil_risiko() {
+        $this->load->model('FormulirRisiko_model');
+
+        $monitoring_id = (int)$this->input->post('monitoring_id', TRUE);
+        $formulir_id   = (int)$this->input->post('formulir_id', TRUE);
+        $tahun         = (int)$this->input->post('tahun', TRUE);
+        $periode       = trim((string)$this->input->post('periode', TRUE));
+        $periode_tipe  = trim((string)$this->input->post('periode_tipe', TRUE)) ?: 'triwulan';
+
+        if ($formulir_id <= 0 || empty($tahun) || empty($periode)) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Parameter Formulir Risiko, Tahun, dan Periode wajib diisi.'
+                ]));
+        }
+
+        $data = [
+            'formulir_id'                    => $formulir_id,
+            'periode_tipe'                   => $periode_tipe,
+            'tahun'                          => $tahun,
+            'periode'                        => $periode,
+            'status_progres_tindak_lanjut'   => trim((string)$this->input->post('status_progres_tindak_lanjut', TRUE)) ?: null,
+            'realisasi_biaya'                => trim((string)$this->input->post('realisasi_biaya', TRUE)) ?: null,
+            'proses_tindak_lanjut_persen'    => trim((string)$this->input->post('proses_tindak_lanjut_persen', TRUE)) ?: null,
+            'persentase_per_risiko'          => trim((string)$this->input->post('persentase_per_risiko', TRUE)) ?: null,
+            'eksposur_kuantitatif_current'        => trim((string)$this->input->post('eksposur_kuantitatif_current', TRUE)) ?: null,
+            'skala_dampak_realisasi_current'      => ($this->input->post('skala_dampak_realisasi_current', TRUE) !== null && $this->input->post('skala_dampak_realisasi_current', TRUE) !== '') ? (int)$this->input->post('skala_dampak_realisasi_current', TRUE) : null,
+            'skala_probabilitas_realisasi_current'=> ($this->input->post('skala_probabilitas_realisasi_current', TRUE) !== null && $this->input->post('skala_probabilitas_realisasi_current', TRUE) !== '') ? (int)$this->input->post('skala_probabilitas_realisasi_current', TRUE) : null,
+            'skala_risiko_realisasi'              => ($this->input->post('skala_risiko_realisasi', TRUE) !== null && $this->input->post('skala_risiko_realisasi', TRUE) !== '') ? (int)$this->input->post('skala_risiko_realisasi', TRUE) : 1,
+            'kendala'                        => trim((string)$this->input->post('kendala', TRUE)) ?: null,
+            'action_plan'                    => trim((string)$this->input->post('action_plan', TRUE)) ?: null,
+            'created_id'                     => (string)($this->session->userdata('username') ?? $this->session->userdata('nama') ?? 'system')
+        ];
+
+        if ($monitoring_id > 0) {
+            $ok = $this->FormulirRisiko_model->update_monitoring($monitoring_id, $data);
+            $msg = 'Data Progress Monitoring berhasil diperbarui.';
+        } else {
+            $ok = $this->FormulirRisiko_model->save_monitoring($data);
+            $msg = 'Data Progress Monitoring berhasil disimpan.';
+        }
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menyimpan data Progress Monitoring ke database.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'  => 'success',
+                'message' => $msg
+            ]));
+    }
+
+    /**
+     * Endpoint AJAX untuk menghapus 1 data Progress Monitoring
+     */
+    public function delete_monitoring_profil_risiko($id) {
+        $this->load->model('FormulirRisiko_model');
+        $ok = $this->FormulirRisiko_model->delete_monitoring((int)$id);
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menghapus data progress monitoring.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'  => 'success',
+                'message' => 'Data Progress Monitoring berhasil dihapus.'
+            ]));
+    }
 }
