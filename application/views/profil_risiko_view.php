@@ -507,71 +507,43 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
                 <?php endforeach; ?>
               <?php endif; ?>
             </select>
-            <span class="helper-text">Pilih kategori dampak kualitatif. Setelah dipilih, acuan rincian kriteria skala 1 s/d 5 akan ditampilkan di bawah ini untuk mempermudah pemilihan skala.</span>
-
-            <!-- Box Container Rincian Skala 1 s/d 5 (Dinamis saat kategori dipilih) -->
-            <div id="boxSkalaKualitatifCards" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <span style="font-size: 12.5px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 6px;">
-                  <span>📋</span> Acuan Kriteria Skala Dampak Kualitatif (Skala 1 s/d 5):
-                </span>
-                <span id="lblSelectedKualitatifJudul" style="font-size: 11.5px; color: var(--teal); font-weight: 700;"></span>
-              </div>
-              <div id="kualitatifCardsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                <!-- Rendered dynamically via JavaScript -->
-              </div>
-            </div>
+            <span class="helper-text">Pilih kategori dampak kualitatif. Setelah dipilih, isi/kriteria skala dampak 1 s/d 5 pada pilihan di bawah akan otomatis terisi dan diperbarui sesuai kategori yang dipilih.</span>
           </div>
 
-          <!-- 3. Skala Dampak Inheren (MNRSK_SkalaDampakKuantitatif) -->
+          <!-- 3. Skala Dampak Inheren (Otomatis berdasarkan Kategori Dampak terpilih) -->
           <div class="profile-field-group">
-            <label>3. Skala Dampak Inheren</label>
-            <span class="helper-text" style="margin-bottom: 6px;">Pilih tingkat skala dampak inheren berdasarkan batasan risiko kuantitatif:</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+              <label style="margin-bottom: 0;">3. Skala Dampak Inheren (Skala 1 s/d 5)</label>
+              <span id="lblSelectedKualitatifJudul" style="font-size: 11.5px; color: var(--teal); font-weight: 700;"></span>
+            </div>
+            <span class="helper-text" style="margin-bottom: 6px;">Pilih tingkat skala dampak inheren berdasarkan kriteria dampak kualitatif dari kategori yang dipilih:</span>
             
             <div class="radio-scale-grid" id="gridSkalaDampak">
-              <?php if (!empty($skala_kuantitatif)): ?>
-                <?php foreach ($skala_kuantitatif as $item): ?>
-                  <label class="scale-card-option" id="card-dampak-<?= $item->skala ?>">
-                    <input type="radio" name="skala_dampak_inheren" value="<?= $item->skala ?>" onchange="onSkalaDampakChange(this.value)" />
-                    <div style="flex: 1;">
-                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-                        <span class="badge-skala badge-skala-<?= $item->skala ?>"><?= $item->skala ?></span>
-                        <strong style="font-size: 13px; color: var(--navy);">
-                          <?php switch ($item->skala) {
-                            case '1':
-                              echo 'Sangat Rendah';
-                              break;
-                            case '2':
-                              echo 'Rendah';
-                              break;
-                            case '3':
-                              echo 'Moderat';
-                              break;
-                            case '4':
-                              echo 'Tinggi';
-                              break;
-                            case '5':
-                              echo 'Sangat Tinggi';
-                              break;
-                            default:
-                              '-';
-                              break;
-                          }
-                          ?>
-                        </strong>
-                        <span style="font-size: 11px; font-weight: 600; color: var(--teal); background: #e6f7f6; padding: 2px 7px; border-radius: 4px; margin-left: auto;">
-                          <?= htmlspecialchars($item->range ?? '') ?>
-                        </span>
-                      </div>
-                      <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.45;">
-                        <?= htmlspecialchars($item->deskripsi ?? '') ?>
-                      </p>
+              <?php
+                $defaultLabels = [
+                  1 => 'Sangat Rendah',
+                  2 => 'Rendah',
+                  3 => 'Moderat',
+                  4 => 'Tinggi',
+                  5 => 'Sangat Tinggi'
+                ];
+                for ($lvl = 1; $lvl <= 5; $lvl++):
+              ?>
+                <label class="scale-card-option" id="card-dampak-<?= $lvl ?>">
+                  <input type="radio" name="skala_dampak_inheren" value="<?= $lvl ?>" onchange="onSkalaDampakChange(this.value)" />
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                      <span class="badge-skala badge-skala-<?= $lvl ?>"><?= $lvl ?></span>
+                      <strong style="font-size: 13px; color: var(--navy);" id="lbl-title-dampak-<?= $lvl ?>">
+                        Skala <?= $lvl ?> · <?= $defaultLabels[$lvl] ?>
+                      </strong>
                     </div>
-                  </label>
-                <?php endforeach; ?>
-              <?php else: ?>
-                <p style="color: var(--muted); font-size: 12.5px;">Data Skala Dampak Kuantitatif belum tersedia.</p>
-              <?php endif; ?>
+                    <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.45;" id="desc-dampak-<?= $lvl ?>">
+                      Silakan pilih Kategori Dampak di atas untuk memuat kriteria Skala <?= $lvl ?>.
+                    </p>
+                  </div>
+                </label>
+              <?php endfor; ?>
             </div>
           </div>
 
@@ -693,10 +665,16 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
             <span class="helper-text">Pilih opsi respon atau strategi operasi perlakuan risiko yang akan diterapkan.</span>
           </div>
 
-          <!-- 2. Jenis Rencana Perlakukan Risiko -->
+          <!-- 2. Jenis Rencana Perlakuan Risiko -->
           <div class="profile-field-group">
             <label for="jenis_rencana_perlakuan">2. Jenis Rencana Perlakuan Risiko</label>
-            <textarea id="jenis_rencana_perlakuan" name="jenis_rencana_perlakuan" rows="2" placeholder="Uraikan jenis rencana perlakuan risiko (misal: Preventif, Mitigasi, Detektif, atau Kontinjensi)..."></textarea>
+            <select id="jenis_rencana_perlakuan" name="jenis_rencana_perlakuan">
+              <option value="">-- Pilih Jenis Rencana Perlakuan Risiko --</option>
+              <option value="Peningkatan Kecukupan Desain Control">Peningkatan Kecukupan Desain Control</option>
+              <option value="Peningkatan Efektivitas Pelaksanaan Control">Peningkatan Efektivitas Pelaksanaan Control</option>
+              <option value="Perbaikan Melalui Breakthrough Project">Perbaikan Melalui Breakthrough Project</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
             <span class="helper-text">Karakteristik atau pendekatan rencana aksi perlakuan risiko.</span>
           </div>
 
@@ -985,27 +963,35 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
   }
 
   /**
-   * Kategori Dampak Change: Tampilkan kartu kriteria skala 1 s/d 5 (Tab 2 Field 2)
+   * Kategori Dampak Change: Perbarui teks & kriteria Skala Dampak Inheren (Skala 1 s/d 5)
    */
   function onKategoriDampakChange(kategoriId) {
-    const $box   = $('#boxSkalaKualitatifCards');
-    const $cards = $('#kualitatifCardsList');
     const $judul = $('#lblSelectedKualitatifJudul');
 
+    const defaultLabels = {
+      1: 'Sangat Rendah',
+      2: 'Rendah',
+      3: 'Moderat',
+      4: 'Tinggi',
+      5: 'Sangat Tinggi'
+    };
+
     if (!kategoriId) {
-      $box.slideUp(180);
-      $cards.empty();
       $judul.text('');
+      for (let lvl = 1; lvl <= 5; lvl++) {
+        $(`#lbl-title-dampak-${lvl}`).text(`Skala ${lvl} · ${defaultLabels[lvl]}`);
+        $(`#desc-dampak-${lvl}`).text(`Silakan pilih Kategori Dampak di atas untuk memuat kriteria Skala ${lvl}.`);
+      }
       return;
     }
 
     const selectedItem = skalaKualitatifList.find(x => parseInt(x.id, 10) === parseInt(kategoriId, 10));
     if (!selectedItem) {
-      $box.slideUp(180);
+      $judul.text('');
       return;
     }
 
-    $judul.text(selectedItem.judul + ' · ' + (selectedItem.risiko || ''));
+    $judul.text(selectedItem.judul + (selectedItem.risiko ? ' · ' + selectedItem.risiko : ''));
 
     const scales = [
       { lvl: 1, label: 'Sangat Rendah', text: selectedItem.skala_1 },
@@ -1015,36 +1001,10 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
       { lvl: 5, label: 'Sangat Tinggi', text: selectedItem.skala_5 }
     ];
 
-    let html = '';
     scales.forEach(s => {
-      html += `
-        <div class="kualitatif-scale-card" onclick="selectSkalaDampakInheren(${s.lvl})" title="Klik untuk memilih Skala ${s.lvl}">
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-            <span class="badge-skala badge-skala-${s.lvl}">${s.lvl}</span>
-            <strong style="font-size:12px; color:var(--navy);">${s.label}</strong>
-          </div>
-          <p style="font-size:11.5px; color:#475569; margin:0; line-height:1.4;">
-            ${escapeHtml(s.text)}
-          </p>
-        </div>
-      `;
+      $(`#lbl-title-dampak-${s.lvl}`).text(`Skala ${s.lvl} · ${s.label}`);
+      $(`#desc-dampak-${s.lvl}`).text(s.text || '-');
     });
-
-    $cards.html(html);
-    $box.slideDown(200);
-  }
-
-  /**
-   * Shortcut klik kartu kualitatif untuk memilih Skala Dampak
-   */
-  function selectSkalaDampakInheren(skalaVal) {
-    const $radio = $(`input[name="skala_dampak_inheren"][value="${skalaVal}"]`);
-    if ($radio.length) {
-      $radio.prop('checked', true).trigger('change');
-      // Beri efek highlight
-      $('.kualitatif-scale-card').removeClass('active-scale');
-      $(`.kualitatif-scale-card:nth-child(${skalaVal})`).addClass('active-scale');
-    }
   }
 
   /**
