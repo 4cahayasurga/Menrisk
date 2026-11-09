@@ -376,7 +376,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
         <p id="addModalSubtitle">Masukkan tingkatan level, parent kategori, kode, nama, dan definisi</p>
       </div>
 
-      <form id="addCategoryForm" onsubmit="submitAddCategory(event)">
+      <form id="addCategoryForm">
         <!-- Tingkat Level Selector -->
         <div class="form-row">
           <label for="addLevelSelect">Tingkat Level</label>
@@ -431,7 +431,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
         <p id="editModalSubtitle">Perbarui rincian kode, nama, dan definisi taksonomi</p>
       </div>
 
-      <form id="editCategoryForm" onsubmit="submitEditCategory(event)">
+      <form id="editCategoryForm">
         <input type="hidden" id="editId" name="id" />
         <input type="hidden" id="editLevel" name="level" />
 
@@ -656,6 +656,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
       if (e && e.preventDefault) e.preventDefault();
 
       const $saveBtn = $('#addSaveBtn');
+      if ($saveBtn.prop('disabled')) {
+        return false;
+      }
       $saveBtn.prop('disabled', true).text('Menyimpan...');
 
       const formData = new FormData($('#addCategoryForm')[0]);
@@ -745,13 +748,17 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kat
     async function submitEditCategory(e) {
       if (e && e.preventDefault) e.preventDefault();
 
+      const $saveBtn = $('#editSaveBtn');
+      if ($saveBtn.prop('disabled')) {
+        return false;
+      }
+
       const id       = $('#editId').val();
       const code     = $.trim($('#editCode').val());
       const nama     = $.trim($('#editName').val());
       const definisi = $.trim($('#editDefinisi').val());
       const level    = $('#editLevel').val();
 
-      const $saveBtn = $('#editSaveBtn');
       $saveBtn.prop('disabled', true).text('Menyimpan...');
 
       const formData = new FormData($('#editCategoryForm')[0]);

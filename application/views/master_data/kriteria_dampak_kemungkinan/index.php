@@ -54,14 +54,17 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kri
 }
 .badge-skala {
   display: inline-block;
-  min-width: 26px;
-  height: 26px;
+  /* min-width: 26px; */
+  padding: auto;
+  /* height: 26px; */
   line-height: 24px;
   text-align: center;
-  border-radius: 50%;
+  border-radius: 5px;
   font-size: 12px;
   font-weight: 700;
   border: 1px solid transparent;
+  width: max-content;
+  padding: 0 10px;
 }
 .badge-skala-1 { background: #e6f4ea; color: #137333; border-color: #ceead6; }
 .badge-skala-2 { background: #e8f0fe; color: #1a73e8; border-color: #d2e3fc; }
@@ -539,11 +542,32 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Kri
         if (tabName === 'kuantitatif') {
             items.forEach((item, idx) => {
                 const skalaClass = `badge-skala-${item.skala || 1}`;
+                var skalaLevel = '';
+                switch (item.skala) {
+                    case 1:
+                        skalaLevel = 'Sangat Rendah';
+                        break;
+                    case 2:
+                        skalaLevel = 'Rendah';
+                        break;
+                    case 3:
+                        skalaLevel = 'Moderat';
+                        break;
+                    case 4:
+                        skalaLevel = 'Tinggi';
+                        break;
+                    case 5:
+                        skalaLevel = 'Sangat Tinggi';
+                        break;
+                    default:
+                        skalaLevel = '-';
+                        break;
+                }
                 rowsHtml += `
                     <tr id="row-${tabName}-${item.id}" data-search="${escapeHtml((item.skala + ' ' + item.kriteria + ' ' + item.deskripsi).toLowerCase())}">
                         <td style="text-align: center;">${idx + 1}</td>
                         <td style="text-align: center;">
-                            <span class="badge-skala ${skalaClass}">${escapeHtml(item.skala)}</span>
+                            <span class="badge-skala ${skalaClass}">${escapeHtml(item.skala)} - ${skalaLevel}</span>
                         </td>
                         <td><b>${escapeHtml(item.range)}</b></td>
                         <td class="cell-truncate">${escapeHtml(item.deskripsi)}</td>

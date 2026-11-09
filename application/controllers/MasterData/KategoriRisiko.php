@@ -79,6 +79,18 @@ class KategoriRisiko extends CI_Controller {
             return;
         }
 
+        // Validasi duplikasi code atau nama
+        $clean_parent_id = (int)preg_replace('/^[a-zA-Z0-9]+-/', '', (string)$parent_id);
+        if ($this->KategoriRisiko_model->is_duplicate($level, $code, $nama, $clean_parent_id)) {
+            $this->output
+                 ->set_content_type('application/json')
+                 ->set_output(json_encode([
+                     'status'  => 'error',
+                     'message' => 'Kode atau nama kategori risiko tersebut sudah terdaftar pada tingkatan ini.'
+                 ]));
+            return;
+        }
+
         $new_id = $this->KategoriRisiko_model->insert_item($level, [
             'code'       => $code,
             'nama'       => $nama,

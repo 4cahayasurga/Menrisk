@@ -38,3 +38,13 @@ $route['settings/departments']      = 'settings/departments';
 $route['settings/department_save']  = 'settings/department_save';
 $route['settings/department_delete/(:num)'] = 'settings/department_delete/$1';
 $route['settings/toggle_department'] = 'settings/toggle_user_department';
+
+$route['menrisk/profil_risiko']             = 'menrisk/profil_risiko';
+$route['menrisk/profil_risiko/(:num)']      = 'menrisk/profil_risiko/$1';
+$route['menrisk/profil-risiko']             = 'menrisk/profil_risiko';
+$route['menrisk/profil-risiko/(:num)']      = 'menrisk/profil_risiko/$1';
+$route['profil-risiko']                     = 'menrisk/profil_risiko';
+$route['menrisk/save_profil_risiko']        = 'menrisk/save_profil_risiko';
+$route['menrisk/daftar_profil_risiko']      = 'menrisk/daftar_profil_risiko';
+$route['menrisk/daftar-profil-risiko']      = 'menrisk/daftar_profil_risiko';
+$route['menrisk/detail_profil_risiko/(:num)'] = 'menrisk/detail_profil_risiko/$1';

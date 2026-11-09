@@ -14,6 +14,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Sum
         <p class="subtitle"></p>
     </div>
     <div class="header-actions">
+        <button class="primary" onclick="openAddFormRisk()">+ Tambah Data 2</button>
         <button class="primary" onclick="openAddCategoryModal()">+ Tambah Data</button>
         <div class="avatar" title="<?= htmlspecialchars($current_user['nama'] ?? 'Admin') ?>">
         <?= strtoupper(substr($current_user['nama'] ?? 'AD', 0, 2)) ?>
@@ -153,7 +154,32 @@ $this->load->view('templates/header', ['title' => $title ?? 'Master Data — Sum
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL: TESTING ADD FORM PROFIL RISIKO                                   -->
+<!-- ========================================================================= -->
+ <div class="modal-backdrop" id="addProfileRisikoModal">
+    <div class="modal-box" style="width: min(940px, 100%);">
+        <button type="button" class="modal-close" onclick="closeEditCategoryModal()" aria-label="Tutup">×</button>
+        <div class="modal-header">
+            <h2 id="editModalTitle">Edit Faktor Risiko</h2>
+            <p id="editModalSubtitle">Perbarui sumber risiko & nama faktor risiko</p>
+        </div>
+
+    </div>
+ </div>
+
+
+
+
 <script>
+    // =========================================================================
+    // TESTING FITUR TAMBAH PROFIL RISIKO (ADD MODAL)
+    // =========================================================================
+    function openAddFormRisk() {
+        console.log('asd')
+        $('#addProfileRisikoModal').addClass('show');
+    }
+
     // =========================================================================
     // FITUR TAMBAH DATA (ADD MODAL)
     // =========================================================================

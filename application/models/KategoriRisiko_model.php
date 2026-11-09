@@ -45,12 +45,30 @@ class KategoriRisiko_model extends CI_Model {
     }
 
     /**
+     * Helper untuk melakukan pengurutan alami (natural sort) pada array data berdasarkan kolom 'code'
+     * Memastikan kode hierarki seperti 1.2.9 berada sebelum 1.2.10
+     */
+    public function sort_by_code(array &$items) {
+        usort($items, function($a, $b) {
+            $codeA = is_array($a) ? ($a['code'] ?? '') : (is_object($a) ? ($a->code ?? '') : (string)$a);
+            $codeB = is_array($b) ? ($b['code'] ?? '') : (is_object($b) ? ($b->code ?? '') : (string)$b);
+            $cmp = version_compare($codeA, $codeB);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strnatcasecmp($codeA, $codeB);
+        });
+        return $items;
+    }
+
+    /**
      * Ambil seluruh struktur hierarki 4 level lengkap dari database
      * Level 1 (T1) -> Level 2 (T2) -> Level 3 (T3) -> Level 4 (T4)
      */
     public function get_all_hierarchy() {
         // 1. Ambil seluruh data Level 4 (T4)
         $t4_rows = $this->db->order_by('code', 'ASC')->order_by('id', 'ASC')->get($this->table_t4)->result_array();
+        $this->sort_by_code($t4_rows);
         $t4_by_parent = [];
         foreach ($t4_rows as $r4) {
             $parentId = (int)$r4['kat_perusahaan_id'];
@@ -70,6 +88,7 @@ class KategoriRisiko_model extends CI_Model {
 
         // 2. Ambil seluruh data Level 3 (T3) dan tautkan anak T4
         $t3_rows = $this->db->order_by('code', 'ASC')->order_by('id', 'ASC')->get($this->table_t3)->result_array();
+        $this->sort_by_code($t3_rows);
         $t3_by_parent = [];
         foreach ($t3_rows as $r3) {
             $parentId = (int)$r3['kat_kbumn_id'];
@@ -77,6 +96,8 @@ class KategoriRisiko_model extends CI_Model {
             if (!isset($t3_by_parent[$parentId])) {
                 $t3_by_parent[$parentId] = [];
             }
+            $children = $t4_by_parent[$t3_id] ?? [];
+            $this->sort_by_code($children);
             $t3_by_parent[$parentId][] = [
                 'id'       => 't3-' . $t3_id,
                 'db_id'    => $t3_id,
@@ -84,12 +105,13 @@ class KategoriRisiko_model extends CI_Model {
                 'nama'     => trim((string)$r3['nama']),
                 'definisi' => trim((string)$r3['definisi']),
                 'level'    => 'T3',
-                'children' => $t4_by_parent[$t3_id] ?? []
+                'children' => $children
             ];
         }
 
         // 3. Ambil seluruh data Level 2 (T2) dan tautkan anak T3
         $t2_rows = $this->db->order_by('code', 'ASC')->order_by('id', 'ASC')->get($this->table_t2)->result_array();
+        $this->sort_by_code($t2_rows);
         $t2_by_parent = [];
         foreach ($t2_rows as $r2) {
             $parentId = (int)$r2['tema_id'];
@@ -97,6 +119,8 @@ class KategoriRisiko_model extends CI_Model {
             if (!isset($t2_by_parent[$parentId])) {
                 $t2_by_parent[$parentId] = [];
             }
+            $children = $t3_by_parent[$t2_id] ?? [];
+            $this->sort_by_code($children);
             $t2_by_parent[$parentId][] = [
                 'id'       => 't2-' . $t2_id,
                 'db_id'    => $t2_id,
@@ -104,15 +128,18 @@ class KategoriRisiko_model extends CI_Model {
                 'nama'     => trim((string)$r2['nama']),
                 'definisi' => trim((string)$r2['definisi']),
                 'level'    => 'T2',
-                'children' => $t3_by_parent[$t2_id] ?? []
+                'children' => $children
             ];
         }
 
         // 4. Ambil seluruh data Level 1 (T1) dan tautkan anak T2
         $t1_rows = $this->db->order_by('code', 'ASC')->order_by('id', 'ASC')->get($this->table_t1)->result_array();
+        $this->sort_by_code($t1_rows);
         $result = [];
         foreach ($t1_rows as $r1) {
             $t1_id = (int)$r1['id'];
+            $children = $t2_by_parent[$t1_id] ?? [];
+            $this->sort_by_code($children);
             $result[] = [
                 'id'       => 't1-' . $t1_id,
                 'db_id'    => $t1_id,
@@ -120,11 +147,73 @@ class KategoriRisiko_model extends CI_Model {
                 'nama'     => trim((string)$r1['nama']),
                 'definisi' => trim((string)$r1['definisi']),
                 'level'    => 'T1',
-                'children' => $t2_by_parent[$t1_id] ?? []
+                'children' => $children
             ];
         }
 
+        $this->sort_by_code($result);
         return $result;
+    }
+
+    /**
+     * Cek apakah code atau nama sudah terdaftar pada level (dan parent) tertentu
+     * @param string $level Kode level ('T1', 'T2', 'T3', 'T4')
+     * @param string $code Kode taksonomi
+     * @param string $nama Nama kategori
+     * @param int|null $parentId ID parent untuk T2, T3, T4
+     * @param int|null $excludeId ID record yang sedang diedit (jika mode edit)
+     * @return bool TRUE jika duplicate ditemukan, FALSE jika aman
+     */
+    public function is_duplicate($level, $code, $nama, $parentId = null, $excludeId = null) {
+        $table = $this->get_table_by_level($level);
+        if (!$table) {
+            return FALSE;
+        }
+
+        $code = trim((string)$code);
+        $nama = trim((string)$nama);
+        $lvl  = strtoupper(trim((string)$level));
+
+        $params = [$code, $nama];
+        $whereClauses = ["(code = ? OR CAST(nama AS NVARCHAR(MAX)) = ?)"];
+
+        switch ($lvl) {
+            case 'T2':
+            case '2':
+                if (!empty($parentId)) {
+                    $whereClauses[] = "tema_id = ?";
+                    $params[] = (int)$parentId;
+                }
+                break;
+            case 'T3':
+            case '3':
+                if (!empty($parentId)) {
+                    $whereClauses[] = "kat_kbumn_id = ?";
+                    $params[] = (int)$parentId;
+                }
+                break;
+            case 'T4':
+            case '4':
+                if (!empty($parentId)) {
+                    $whereClauses[] = "kat_perusahaan_id = ?";
+                    $params[] = (int)$parentId;
+                }
+                break;
+        }
+
+        if (!empty($excludeId) && (int)$excludeId > 0) {
+            $whereClauses[] = "id != ?";
+            $params[] = (int)$excludeId;
+        }
+
+        $sql = "SELECT COUNT(*) as cnt FROM {$table} WHERE " . implode(' AND ', $whereClauses);
+        $q = $this->db->query($sql, $params);
+        if ($q && is_object($q)) {
+            $row = $q->row_array();
+            return ((int)($row['cnt'] ?? 0)) > 0;
+        }
+
+        return FALSE;
     }
 
     /**
@@ -251,33 +340,39 @@ class KategoriRisiko_model extends CI_Model {
      * Ambil daftar opsi Parent T1 (Tema Risiko)
      */
     public function get_t1_options() {
-        return $this->db->select('id, code, nama')
-                        ->order_by('code', 'ASC')
-                        ->order_by('id', 'ASC')
-                        ->get($this->table_t1)
-                        ->result_array();
+        $rows = $this->db->select('id, code, nama')
+                         ->order_by('code', 'ASC')
+                         ->order_by('id', 'ASC')
+                         ->get($this->table_t1)
+                         ->result_array();
+        $this->sort_by_code($rows);
+        return $rows;
     }
 
     /**
      * Ambil daftar opsi Parent T2 (Kategori Risiko KBUMN)
      */
     public function get_t2_options() {
-        return $this->db->select('id, tema_id, code, nama')
-                        ->order_by('code', 'ASC')
-                        ->order_by('id', 'ASC')
-                        ->get($this->table_t2)
-                        ->result_array();
+        $rows = $this->db->select('id, tema_id, code, nama')
+                         ->order_by('code', 'ASC')
+                         ->order_by('id', 'ASC')
+                         ->get($this->table_t2)
+                         ->result_array();
+        $this->sort_by_code($rows);
+        return $rows;
     }
 
     /**
      * Ambil daftar opsi Parent T3 (Kategori Risiko Perusahaan)
      */
     public function get_t3_options() {
-        return $this->db->select('id, kat_kbumn_id, code, nama')
-                        ->order_by('code', 'ASC')
-                        ->order_by('id', 'ASC')
-                        ->get($this->table_t3)
-                        ->result_array();
+        $rows = $this->db->select('id, kat_kbumn_id, code, nama')
+                         ->order_by('code', 'ASC')
+                         ->order_by('id', 'ASC')
+                         ->get($this->table_t3)
+                         ->result_array();
+        $this->sort_by_code($rows);
+        return $rows;
     }
 
     /**

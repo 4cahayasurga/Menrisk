@@ -259,8 +259,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             <h2>Enterprise Risk Register</h2>
             <p>Daftar risiko lintas department dan status tindak lanjut</p>
           </div>
-          <div style="display:flex;gap:10px;align-items:center;">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input id="search" placeholder="Cari risiko, ID, atau owner..." value="<?= htmlspecialchars($search_keyword) ?>" />
+            <a href="<?= site_url('menrisk/profil_risiko') ?>" id="btnOpenProfilRisiko" style="display:inline-flex;align-items:center;gap:6px;padding:9px 15px;background:#fff;color:var(--navy);border:1px solid #cbd5e1;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.05);transition:all .15s ease;">
+              <span style="font-size:15px;line-height:1">📋</span> Formulir Profile Risiko
+            </a>
             <button id="btnOpenAddRisk" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg, var(--teal) 0%, #00877e 100%);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:0 3px 8px rgba(0,168,157,0.3);transition:transform .15s, filter .15s;">
               <span style="font-size:16px;line-height:1">+</span> Tambah Risiko
             </button>

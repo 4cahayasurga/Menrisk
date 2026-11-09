@@ -173,12 +173,12 @@ class KriteriaDampakKemungkinan extends CI_Controller {
             }
 
         } elseif ($tab === 'probabilitas') {
-            $parameter = trim((string)$this->input->post('parameter', TRUE));
-            $skala_1   = trim((string)$this->input->post('skala_1', TRUE));
-            $skala_2   = trim((string)$this->input->post('skala_2', TRUE));
-            $skala_3   = trim((string)$this->input->post('skala_3', TRUE));
-            $skala_4   = trim((string)$this->input->post('skala_4', TRUE));
-            $skala_5   = trim((string)$this->input->post('skala_5', TRUE));
+            $parameter = trim((string)$this->input->post('parameter', FALSE));
+            $skala_1   = trim((string)$this->input->post('skala_1', FALSE));
+            $skala_2   = trim((string)$this->input->post('skala_2', FALSE));
+            $skala_3   = trim((string)$this->input->post('skala_3', FALSE));
+            $skala_4   = trim((string)$this->input->post('skala_4', FALSE));
+            $skala_5   = trim((string)$this->input->post('skala_5', FALSE));
 
             if (empty($parameter) || empty($skala_1) || empty($skala_2) || empty($skala_3) || empty($skala_4) || empty($skala_5)) {
                 $this->_send_error('Seluruh kolom (Parameter dan Skala 1 s/d 5) wajib diisi.');
@@ -301,12 +301,12 @@ class KriteriaDampakKemungkinan extends CI_Controller {
                 return;
             }
 
-            $parameter = trim((string)$this->input->post('parameter', TRUE));
-            $skala_1   = trim((string)$this->input->post('skala_1', TRUE));
-            $skala_2   = trim((string)$this->input->post('skala_2', TRUE));
-            $skala_3   = trim((string)$this->input->post('skala_3', TRUE));
-            $skala_4   = trim((string)$this->input->post('skala_4', TRUE));
-            $skala_5   = trim((string)$this->input->post('skala_5', TRUE));
+            $parameter = trim((string)$this->input->post('parameter', FALSE));
+            $skala_1   = trim((string)$this->input->post('skala_1', FALSE));
+            $skala_2   = trim((string)$this->input->post('skala_2', FALSE));
+            $skala_3   = trim((string)$this->input->post('skala_3', FALSE));
+            $skala_4   = trim((string)$this->input->post('skala_4', FALSE));
+            $skala_5   = trim((string)$this->input->post('skala_5', FALSE));
 
             if (empty($parameter) || empty($skala_1) || empty($skala_2) || empty($skala_3) || empty($skala_4) || empty($skala_5)) {
                 $this->_send_error('Seluruh kolom wajib diisi.');

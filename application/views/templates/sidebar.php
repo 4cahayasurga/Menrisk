@@ -56,6 +56,10 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
       </a>
     <?php endif; ?>
 
+    <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="nav <?= ($active_menu === 'daftar_profil_risiko') ? 'active' : '' ?>" style="text-decoration:none">
+      <span>≣</span> Profile Risiko
+    </a>
+
     <!-- MENU MASTER DATA -->
     <div class="sidebar-section">MASTER DATA</div>
     <a href="<?= site_url('MasterData/KategoriRisiko') ?>" class="nav <?= ($active_menu === 'm_kategori_risiko') ? 'active' : '' ?>" style="text-decoration:none">
