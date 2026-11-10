@@ -860,11 +860,18 @@ $this->load->view('templates/header', ['title' => $title ?? 'Progress Monitoring
     });
   }
 
+  let isMonitoringSubmitting = false;
+
   function submitMonitoringForm(e) {
     if (e && e.preventDefault) e.preventDefault();
 
+    if (isMonitoringSubmitting) {
+      return false;
+    }
+
     const $btn = $('#btnSaveMonitoring');
-    $btn.prop('disabled', true).text('Menyimpan...');
+    isMonitoringSubmitting = true;
+    $btn.prop('disabled', true).addClass('disabled').css('pointer-events', 'none').text('Menyimpan...');
 
     const formData = new FormData($('#formMonitoring')[0]);
 
@@ -879,17 +886,20 @@ $this->load->view('templates/header', ['title' => $title ?? 'Progress Monitoring
       success: function(res) {
         if (res.status === 'success') {
           showToast(res.message || 'Progress Monitoring berhasil disimpan.');
+          $btn.text('Tersimpan, memuat ulang...');
           setTimeout(() => {
             window.location.reload();
           }, 1000);
         } else {
           showToast(res.message || 'Gagal menyimpan progress monitoring.');
-          $btn.prop('disabled', false).text('Simpan Progress Monitoring');
+          isMonitoringSubmitting = false;
+          $btn.prop('disabled', false).removeClass('disabled').css('pointer-events', '').text('Simpan Progress Monitoring');
         }
       },
       error: function() {
         showToast('Terjadi kesalahan koneksi saat menyimpan progress monitoring.');
-        $btn.prop('disabled', false).text('Simpan Progress Monitoring');
+        isMonitoringSubmitting = false;
+        $btn.prop('disabled', false).removeClass('disabled').css('pointer-events', '').text('Simpan Progress Monitoring');
       }
     });
   }

@@ -86,6 +86,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 18px;
 }
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
 .form-grid-full {
   display: flex;
   flex-direction: column;
@@ -281,7 +286,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
           <span>✎</span> Edit Profile Risiko
         </a>
       <?php else: ?>
-        <button type="button" class="primary" onclick="submitProfilRisikoForm()" id="btnTopSave">
+        <button type="button" class="primary btn-submit-profile" onclick="submitProfilRisikoForm()" id="btnTopSave">
           Simpan Profile Risiko
         </button>
       <?php endif; ?>
@@ -294,24 +299,46 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
   <form id="formProfilRisiko" onsubmit="submitProfilRisikoForm(event)">
     <input type="hidden" id="formulir_id" name="formulir_id" value="<?= !empty($formulir_detail->id) ? (int)$formulir_detail->id : '' ?>" />
 
-    <!-- SECTION ATAS: SASARAN/TARGET & FUNGSI KERJA -->
+    <!-- SECTION ATAS: DEPARTMENT, SASARAN/TARGET & FUNGSI KERJA -->
     <div class="form-card">
       <div class="form-card-title">
-        <span>🎯</span> Informasi Sasaran & Fungsi Kerja
+        <span>🎯</span> Informasi Department, Sasaran & Fungsi Kerja
       </div>
-      <p class="form-card-desc">Tentukan sasaran/target yang terancam serta unit/fungsi kerja yang bertanggung jawab mengelola profil risiko ini.</p>
+      <p class="form-card-desc">Tentukan department yang mengelola, sasaran/target yang terancam serta unit/fungsi kerja yang bertanggung jawab mengelola profil risiko ini.</p>
 
-      <div class="form-grid-2">
-        <!-- 1. Sasaran / Target -->
+      <div class="form-grid-3">
+        <!-- 1. Pemilihan Department -->
         <div class="profile-field-group">
-          <label for="sasaran">1. Sasaran / Target <span style="color: var(--red);">*</span></label>
+          <label for="department_id">1. Department <span style="color: var(--red);">*</span></label>
+          <select id="department_id" name="department_id" required>
+            <option value="">-- Pilih Department --</option>
+            <?php if (!empty($user_departments)): ?>
+              <?php foreach ($user_departments as $dept): ?>
+                <?php 
+                  $d_id   = (int)($dept['id'] ?? 0);
+                  $d_name = $dept['name'] ?? $dept['d_3_name'] ?? '';
+                  $d_code = $dept['code'] ?? $dept['d_3_desc'] ?? '';
+                  $is_sel = (!empty($formulir_detail->department_id) && (int)$formulir_detail->department_id === $d_id);
+                ?>
+                <option value="<?= $d_id ?>" <?= $is_sel ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($d_name) ?><?= (!empty($d_code) && $d_code !== $d_name) ? ' (' . htmlspecialchars($d_code) . ')' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </select>
+          <span class="helper-text">Department yang terasosiasi dengan akun Anda.</span>
+        </div>
+
+        <!-- 2. Sasaran / Target -->
+        <div class="profile-field-group">
+          <label for="sasaran">2. Sasaran / Target <span style="color: var(--red);">*</span></label>
           <input type="text" id="sasaran" name="sasaran" required placeholder="Contoh: Menjaga keandalan layanan penyeberangan dan zero accident armada kapal" />
           <span class="helper-text">Sasaran kinerja, KPI, atau target strategis yang ingin dicapai.</span>
         </div>
 
-        <!-- 2. Fungsi Kerja -->
+        <!-- 3. Fungsi Kerja -->
         <div class="profile-field-group">
-          <label for="fungsi_kerja">2. Fungsi Kerja <span style="color: var(--red);">*</span></label>
+          <label for="fungsi_kerja">3. Fungsi Kerja <span style="color: var(--red);">*</span></label>
           <input type="text" id="fungsi_kerja" name="fungsi_kerja" required placeholder="Contoh: Divisi Operasi & Pemeliharaan Armada Kapal" />
           <span class="helper-text">Divisi, fungsi operasional, atau direktorat pelaksana.</span>
         </div>
@@ -635,7 +662,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
             <button type="button" class="ghost" onclick="switchProfileTab('tab3')">
               Lanjut ke Rencana Perlakuan →
             </button>
-            <button type="submit" class="primary">
+            <button type="submit" class="primary btn-submit-profile">
               Simpan Profile Risiko
             </button>
           </div>
@@ -733,7 +760,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
             <button type="button" class="ghost" onclick="switchProfileTab('tab4')">
               Lanjut ke Kuantifikasi Residual →
             </button>
-            <button type="submit" class="primary">
+            <button type="submit" class="primary btn-submit-profile">
               Simpan Profile Risiko
             </button>
           </div>
@@ -882,7 +909,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
           <button type="button" class="ghost" onclick="switchProfileTab('tab3')">
             ← Kembali ke Rencana Perlakuan
           </button>
-          <button type="submit" class="primary">
+          <button type="submit" class="primary btn-submit-profile">
             Simpan Profile Risiko
           </button>
         </div>
@@ -1079,12 +1106,20 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
     $('#skala_risiko_inheren').css('accent-color', info.bg);
   }
 
+  let isProfilRisikoSubmitting = false;
+
   /**
    * Submit / Simpan Formulir Profile Risiko
    */
   function submitProfilRisikoForm(e) {
     if (e && e.preventDefault) e.preventDefault();
 
+    // Mencegah submit berulang kali jika sedang dalam proses penyimpanan
+    if (isProfilRisikoSubmitting) {
+      return false;
+    }
+
+    const departmentId= $.trim($('#department_id').val());
     const sasaran     = $.trim($('#sasaran').val());
     const fungsiKerja = $.trim($('#fungsi_kerja').val());
     const namaRisiko  = $.trim($('#nama_risiko').val());
@@ -1094,6 +1129,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
     const efektifitas = $.trim($('#efektifitas_kontrol').val());
 
     // Validasi field pokok
+    if (!departmentId) {
+      showToast('Mohon pilih Department terlebih dahulu.');
+      $('#department_id').focus();
+      return;
+    }
     if (!sasaran) {
       showToast('Mohon isi kolom Sasaran / Target terlebih dahulu.');
       $('#sasaran').focus();
@@ -1135,10 +1175,10 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
       return;
     }
 
-    const $btnTop = $('#btnTopSave');
-    const $btnBottom = $('#btnBottomSave');
-    $btnTop.prop('disabled', true).text('Menyimpan...');
-    $btnBottom.prop('disabled', true).text('Menyimpan...');
+    // Aktifkan flag penguncian dan disable seluruh tombol simpan untuk mencegah data double
+    isProfilRisikoSubmitting = true;
+    const $allSubmitBtns = $('#btnTopSave, #formProfilRisiko button[type="submit"], .btn-submit-profile');
+    $allSubmitBtns.prop('disabled', true).addClass('disabled').css('pointer-events', 'none').text('Menyimpan data...');
 
     const formData = new FormData($('#formProfilRisiko')[0]);
 
@@ -1153,19 +1193,21 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
       success: function(res) {
         if (res.status === 'success') {
           showToast(res.message || 'Formulir Profile Risiko berhasil disimpan.');
+          $allSubmitBtns.text('Tersimpan, mengalihkan...');
+          // Tetap nonaktifkan tombol dan flag hingga halaman beralih
           setTimeout(() => {
             window.location.href = res.redirect_url || '<?= site_url("menrisk/daftar_profil_risiko") ?>';
-          }, 1200);
+          }, 1000);
         } else {
           showToast(res.message || 'Gagal menyimpan Formulir Profile Risiko.');
+          isProfilRisikoSubmitting = false;
+          $allSubmitBtns.prop('disabled', false).removeClass('disabled').css('pointer-events', '').text('Simpan Profile Risiko');
         }
       },
       error: function() {
         showToast('Terjadi kesalahan koneksi saat menyimpan profil risiko.');
-      },
-      complete: function() {
-        $btnTop.prop('disabled', false).text('Simpan Profile Risiko');
-        $btnBottom.prop('disabled', false).text('Simpan Profile Risiko');
+        isProfilRisikoSubmitting = false;
+        $allSubmitBtns.prop('disabled', false).removeClass('disabled').css('pointer-events', '').text('Simpan Profile Risiko');
       }
     });
   }
@@ -1225,6 +1267,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'Formulir Profile Ri
   $(function() {
     if (formulirDetail) {
       // Master
+      if (formulirDetail.department_id) {
+        $('#department_id').val(formulirDetail.department_id);
+      }
       $('#sasaran').val(formulirDetail.sasaran || '');
       $('#fungsi_kerja').val(formulirDetail.fungsi_kerja || '');
 

@@ -319,6 +319,18 @@ class Menrisk extends CI_Controller {
     public function profil_risiko($id = null) {
         $this->load->model('SumberRisiko_model');
         $this->load->model('FormulirRisiko_model');
+        $this->load->model('User_model');
+        $this->load->model('Department_model');
+
+        // Ambil list department dari relasi user ke department
+        $user_id   = trim((string)($this->session->userdata('user_id') ?: $this->session->userdata('username')));
+        $user_role = $this->session->userdata('level');
+        $user_departments = $this->User_model->get_departments_by_user_id($user_id);
+
+        // Fallback jika admin belum ada relasi spesifik di pivot, tampilkan seluruh master department
+        if ($user_role === 'admin' && empty($user_departments)) {
+            $user_departments = $this->Department_model->get_all();
+        }
 
         // 1. Kategori Risiko dari MNRSK_KategoriRisiko_kat_perusahaan (code dan nama)
         $q1 = $this->db->query("SELECT id, code, CAST(nama AS NVARCHAR(MAX)) AS nama FROM dbo.MNRSK_KategoriRisiko_kat_perusahaan ORDER BY code ASC");
@@ -359,6 +371,23 @@ class Menrisk extends CI_Controller {
             if ($formulir_detail) {
                 $req_mode  = strtolower((string)$this->input->get('mode', TRUE));
                 $form_mode = ($req_mode === 'view') ? 'view' : 'edit';
+
+                // Jika data yang diedit/dilihat memiliki department_id yang belum ada di list user_departments, sertakan agar dapat ditampilkan
+                if (!empty($formulir_detail->department_id)) {
+                    $has_dept = false;
+                    foreach ($user_departments as $ud) {
+                        if ((int)$ud['id'] === (int)$formulir_detail->department_id) {
+                            $has_dept = true;
+                            break;
+                        }
+                    }
+                    if (!$has_dept) {
+                        $saved_dept = $this->Department_model->get_by_id((int)$formulir_detail->department_id);
+                        if ($saved_dept) {
+                            $user_departments[] = $saved_dept;
+                        }
+                    }
+                }
             }
         }
 
@@ -370,6 +399,7 @@ class Menrisk extends CI_Controller {
             ],
             'active_menu'         => ($form_mode === 'create') ? 'register' : 'daftar_profil_risiko',
             'is_dashboard'        => false,
+            'user_departments'    => $user_departments,
             'kategori_perusahaan' => $kategori_perusahaan,
             'sumber_risiko'       => $sumber_risiko,
             'faktor_risiko'       => $faktor_risiko,
@@ -437,18 +467,36 @@ class Menrisk extends CI_Controller {
         $this->load->model('FormulirRisiko_model');
 
         $formulir_id         = (int)$this->input->post('formulir_id', TRUE);
+        $department_id       = $this->input->post('department_id', TRUE);
+        $department_id       = ($department_id !== null && $department_id !== '') ? (int)$department_id : null;
         $sasaran             = trim((string)$this->input->post('sasaran', TRUE));
         $fungsi_kerja        = trim((string)$this->input->post('fungsi_kerja', TRUE));
         $nama_risiko         = trim((string)$this->input->post('nama_risiko', TRUE));
 
-        if (empty($sasaran) || empty($fungsi_kerja) || empty($nama_risiko)) {
+        if (empty($department_id) || empty($sasaran) || empty($fungsi_kerja) || empty($nama_risiko)) {
             $this->output
                  ->set_content_type('application/json')
                  ->set_output(json_encode([
                      'status'  => 'error',
-                     'message' => 'Sasaran/Target, Fungsi Kerja, dan Nama Risiko wajib diisi.'
+                     'message' => 'Department, Sasaran/Target, Fungsi Kerja, dan Nama Risiko wajib diisi.'
                  ]));
             return;
+        }
+
+        // Debounce: Cegah request double-submit pada pembuatan data baru
+        if ($formulir_id <= 0) {
+            $last_save = (float)$this->session->userdata('last_profil_save_time');
+            $now = microtime(true);
+            if ($last_save && ($now - $last_save) < 2.0) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'       => 'success',
+                        'message'      => 'Data sedang diproses, mohon tunggu sebentar...',
+                        'redirect_url' => site_url('menrisk/daftar_profil_risiko')
+                    ]));
+            }
+            $this->session->set_userdata('last_profil_save_time', $now);
         }
 
         $sumber_risiko        = $this->input->post('sumber_risiko', TRUE);
@@ -464,9 +512,10 @@ class Menrisk extends CI_Controller {
 
         $payload = [
             'master' => [
-                'sasaran'      => $sasaran,
-                'fungsi_kerja' => $fungsi_kerja,
-                'created_id'   => (string)($this->session->userdata('username') ?? $this->session->userdata('nama') ?? 'system')
+                'department_id' => $department_id,
+                'sasaran'       => $sasaran,
+                'fungsi_kerja'  => $fungsi_kerja,
+                'created_id'    => (string)($this->session->userdata('username') ?? $this->session->userdata('nama') ?? 'system')
             ],
             'tab1' => [
                 'nama_risiko'         => $nama_risiko,
@@ -613,6 +662,21 @@ class Menrisk extends CI_Controller {
                     'status'  => 'error',
                     'message' => 'Parameter Formulir Risiko, Tahun, dan Periode wajib diisi.'
                 ]));
+        }
+
+        // Debounce: Cegah request double-submit pada penambahan monitoring baru
+        if ($monitoring_id <= 0) {
+            $last_mon_save = (float)$this->session->userdata('last_mon_save_time');
+            $now = microtime(true);
+            if ($last_mon_save && ($now - $last_mon_save) < 2.0) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'  => 'success',
+                        'message' => 'Data Progress Monitoring sedang diproses...'
+                    ]));
+            }
+            $this->session->set_userdata('last_mon_save_time', $now);
         }
 
         $data = [

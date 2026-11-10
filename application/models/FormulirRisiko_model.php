@@ -25,6 +25,9 @@ class FormulirRisiko_model extends CI_Model {
         $sql = "
             SELECT 
                 f.id,
+                f.department_id,
+                COALESCE(dept.d_3_name, '') AS department_name,
+                COALESCE(dept.d_3_desc, '') AS department_code,
                 f.sasaran,
                 f.fungsi_kerja,
                 f.created_at,
@@ -50,6 +53,7 @@ class FormulirRisiko_model extends CI_Model {
                 latest_mon.periode AS periode_current,
                 latest_mon.tahun AS tahun_current
             FROM dbo.MNRSK_FormulirRisiko f
+            LEFT JOIN dbo.organisation_d_3s dept ON dept.id = f.department_id
             LEFT JOIN dbo.MNRSK_IdentifikasiRisiko t1 ON t1.formulir_id = f.id
             LEFT JOIN dbo.MNRSK_KategoriRisiko_kat_perusahaan kat ON kat.code = t1.kategori_risiko
             LEFT JOIN dbo.MNRSK_SumberRisiko sr ON sr.id = t1.sumber_risiko
@@ -80,6 +84,9 @@ class FormulirRisiko_model extends CI_Model {
         $sql = "
             SELECT 
                 f.id,
+                f.department_id,
+                COALESCE(dept.d_3_name, '') AS department_name,
+                COALESCE(dept.d_3_desc, '') AS department_code,
                 f.sasaran,
                 f.fungsi_kerja,
                 f.created_at,
@@ -133,6 +140,7 @@ class FormulirRisiko_model extends CI_Model {
                 t4.skala_kemungkinan_residual,
                 t4.skala_risiko_residual
             FROM dbo.MNRSK_FormulirRisiko f
+            LEFT JOIN dbo.organisation_d_3s dept ON dept.id = f.department_id
             LEFT JOIN dbo.MNRSK_IdentifikasiRisiko t1 ON t1.formulir_id = f.id
             LEFT JOIN dbo.MNRSK_KategoriRisiko_kat_perusahaan kat ON kat.code = t1.kategori_risiko
             LEFT JOIN dbo.MNRSK_SumberRisiko sr ON sr.id = t1.sumber_risiko
@@ -156,10 +164,11 @@ class FormulirRisiko_model extends CI_Model {
 
         // 1. Insert Master Table (MNRSK_FormulirRisiko)
         $sqlMaster = "
-            INSERT INTO dbo.MNRSK_FormulirRisiko (sasaran, fungsi_kerja, created_at, created_id)
-            VALUES (?, ?, GETDATE(), ?);
+            INSERT INTO dbo.MNRSK_FormulirRisiko (department_id, sasaran, fungsi_kerja, created_at, created_id)
+            VALUES (?, ?, ?, GETDATE(), ?);
         ";
         $this->db->query($sqlMaster, [
+            !empty($payload['master']['department_id']) ? (int)$payload['master']['department_id'] : null,
             $payload['master']['sasaran'],
             $payload['master']['fungsi_kerja'],
             $payload['master']['created_id'] ?? null
@@ -274,10 +283,11 @@ class FormulirRisiko_model extends CI_Model {
         // 1. Update Master Table
         $sqlMaster = "
             UPDATE dbo.MNRSK_FormulirRisiko
-            SET sasaran = ?, fungsi_kerja = ?, updated_at = GETDATE()
+            SET department_id = ?, sasaran = ?, fungsi_kerja = ?, updated_at = GETDATE()
             WHERE id = ?
         ";
         $this->db->query($sqlMaster, [
+            !empty($payload['master']['department_id']) ? (int)$payload['master']['department_id'] : null,
             $payload['master']['sasaran'],
             $payload['master']['fungsi_kerja'],
             $id

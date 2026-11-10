@@ -199,6 +199,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
           <tr>
             <th style="width: 44px; text-align: center;">No</th>
             <th style="width: 220px; text-align: center;">Aksi</th>
+            <th style="width: 220px; text-align: center;">Department</th>
             <th style="min-width: 190px;">Sasaran / Target</th>
             <th style="min-width: 180px;">Nama Risiko</th>
             <th style="min-width: 160px;">Sumber &amp; Faktor Risiko</th>
@@ -239,6 +240,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                   </div>
                 </td>
                 <td>
+                  <strong><?= htmlspecialchars($row->department_name ?? '-') ?></strong>
+                </td>
+                <td>
                   <div class="cell-clamp" title="<?= htmlspecialchars($row->sasaran ?? '') ?>">
                     <strong><?= htmlspecialchars($row->sasaran ?? '-') ?></strong>
                   </div>
@@ -260,7 +264,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                 </td>
                 <td>
                   <?php if (!empty($row->efektifitas_kontrol)): ?>
-                    <span class="badge-efektif <?= $efClass ?>"><?= htmlspecialchars($row->efektifitas_kontrol) ?></span>
+                    <div class="badge-efektif <?= $efClass ?>"><?= htmlspecialchars($row->efektifitas_kontrol) ?></div>
                   <?php else: ?>
                     -
                   <?php endif; ?>

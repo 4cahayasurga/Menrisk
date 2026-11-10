@@ -497,6 +497,13 @@ header {
   background: var(--navy2);
   border-color: var(--navy2);
 }
+.primary:disabled,
+.primary.disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}
 
 /* ==========================================================================
    6. ALERTS & CALLOUTS (Shielded against BS5 .alert)
