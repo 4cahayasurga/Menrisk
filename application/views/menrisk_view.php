@@ -103,29 +103,29 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
         <article class="kpi">
           <div class="kpi-top"><span>Total Risiko Aktif</span><i class="blue">◎</i></div>
           <strong id="totalRisk"><?= $kpis['total_risks'] ?></strong>
-          <p><b class="down">↓ 4</b> dari bulan lalu</p>
+          <p id="totalRiskSub"><b class="down"><?= $kpis['monitored_risks'] ?? 0 ?> risiko</b> telah dimonitor</p>
           <div class="spark blue-spark"></div>
         </article>
 
         <article class="kpi">
           <div class="kpi-top"><span>Risiko Kritis</span><i class="red">!</i></div>
           <strong id="criticalRisk"><?= $kpis['critical_risks'] ?></strong>
-          <p><b class="up">↑ 2</b> perlu perhatian</p>
+          <p id="criticalRiskSub"><b class="up"><?= $kpis['high_risks'] ?? 0 ?> High</b> · <?= $kpis['mod_high_risks'] ?? 0 ?> Mod. to High</p>
           <div class="spark red-spark"></div>
         </article>
 
         <article class="kpi">
           <div class="kpi-top"><span>Residual Exposure</span><i class="amber">◆</i></div>
-          <strong><?= $kpis['residual_exposure'] ?></strong>
-          <p><b class="down">↓ 8,4%</b> pasca mitigasi</p>
+          <strong id="residualExposure"><?= $kpis['residual_exposure'] ?></strong>
+          <p id="residualExposureSub"><b class="down">↓ <?= $kpis['exposure_diff_pct'] ?? 0 ?>%</b> dari inheren (<?= $kpis['inherent_exposure'] ?? 'Rp 0' ?>)</p>
           <div class="spark amber-spark"></div>
         </article>
 
         <article class="kpi">
           <div class="kpi-top"><span>Mitigasi Tepat Waktu</span><i class="green">✓</i></div>
           <strong id="kpiMitigation"><?= $kpis['ontime_mitigation'] ?></strong>
-          <p><b class="up">11 aksi</b> melewati target</p>
-          <div class="progress"><span style="width:<?= (int)$kpis['ontime_mitigation'] ?>%"></span></div>
+          <p id="kpiMitigationSub"><b class="down"><?= ($kpis['mitigation_stats']['selesai'] ?? 0) + ($kpis['mitigation_stats']['on_track'] ?? 0) ?> aksi</b> berjalan sesuai target</p>
+          <div class="progress"><span id="kpiMitigationBar" style="width:<?= (int)$kpis['ontime_mitigation'] ?>%"></span></div>
         </article>
       </section>
 
@@ -148,8 +148,8 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             <span><i class="legend-i" style="background:#548235"></i>Low (1–5)</span>
             <span><i class="legend-i" style="background:#a9d08e"></i>Low to Mod. (6–11)</span>
             <span><i class="legend-i" style="background:#ffff00;border:1px solid #cbd5e1"></i>Moderate (12–15)</span>
-            <span><i class="legend-i" style="background:#f4b042"></i>Mod. to High (16–20)</span>
-            <span><i class="legend-i" style="background:#e52e20"></i>High (21–25)</span>
+            <span><i class="legend-i" style="background:#f4b042"></i>Mod. to High (16–19)</span>
+            <span><i class="legend-i" style="background:#e52e20"></i>High (20–25)</span>
           </div>
         </article>
 
@@ -157,26 +157,26 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           <div class="panel-head">
             <div>
               <h2>Risk Appetite Status</h2>
-              <p>Eksposur terhadap toleransi BOD</p>
+              <p>Eksposur Profile Risiko terhadap toleransi BOD</p>
             </div>
             <button class="dots">•••</button>
           </div>
           <div class="donut-wrap">
-            <div class="donut">
+            <div class="donut" id="appetiteDonut">
               <div>
-                <strong>71%</strong>
+                <strong id="appetitePct"><?= $kpis['appetite_percent'] ?? 100 ?>%</strong>
                 <span>Dalam appetite</span>
               </div>
             </div>
           </div>
           <div class="appetite-list">
-            <div><span><i class="dot green-bg"></i>Dalam batas</span><b id="appetiteDalam"><?= $kpis['appetite']['Dalam'] ?></b></div>
-            <div><span><i class="dot amber-bg"></i>Mendekati batas</span><b id="appetiteMendekati"><?= $kpis['appetite']['Mendekati'] ?></b></div>
-            <div><span><i class="dot red-bg"></i>Melebihi batas</span><b id="appetiteMelebihi"><?= $kpis['appetite']['Melebihi'] ?></b></div>
+            <div><span><i class="dot green-bg"></i>Dalam batas (1–11)</span><b id="appetiteDalam"><?= $kpis['appetite']['Dalam'] ?></b></div>
+            <div><span><i class="dot amber-bg"></i>Mendekati batas (12–15)</span><b id="appetiteMendekati"><?= $kpis['appetite']['Mendekati'] ?></b></div>
+            <div><span><i class="dot red-bg"></i>Melebihi batas (16–25)</span><b id="appetiteMelebihi"><?= $kpis['appetite']['Melebihi'] ?></b></div>
           </div>
           <div class="callout">
             <span>⚑</span>
-            <p><strong><?= $kpis['appetite']['Melebihi'] ?> risiko melampaui appetite</strong><br>Wajib memiliki treatment plan disetujui BOD.</p>
+            <p><strong id="appetiteCalloutTitle"><?= $kpis['appetite']['Melebihi'] ?> risiko melampaui appetite</strong><br>Wajib memiliki rencana perlakuan &amp; monitoring mitigasi.</p>
           </div>
         </article>
       </section>
@@ -187,9 +187,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           <div class="panel-head">
             <div>
               <h2>Top Enterprise Risks</h2>
-              <p>Urutan berdasarkan residual score</p>
+              <p>Urutan Profile Risiko berdasarkan skor tertinggi</p>
             </div>
-            <button class="link" data-jump="register">Lihat semua →</button>
+            <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="link" style="text-decoration:none;">Lihat semua →</a>
           </div>
           <div class="risk-list" id="topRisks"></div>
         </article>
@@ -198,14 +198,14 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           <div class="panel-head">
             <div>
               <h2>Exposure Trend</h2>
-              <p>Pergerakan inherent vs residual score</p>
+              <p>Perbandingan Inherent, Residual &amp; Current Score Profile Risiko</p>
             </div>
-            <span class="tag">6 BULAN</span>
+            <span class="tag" id="tagTrendCount">PROFILE RISIKO</span>
           </div>
           <div class="chart-legend">
             <span><i class="line navy"></i>Inherent</span>
-            <span><i class="line teal"></i>Residual</span>
-            <span><i class="dash"></i>Appetite</span>
+            <span><i class="line" style="background:#f3a62a"></i>Residual</span>
+            <span><i class="line teal"></i>Current</span>
           </div>
           <div class="linechart" id="trendChart"></div>
         </article>
@@ -217,37 +217,31 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           <div class="panel-head">
             <div>
               <h2>Mitigation Performance</h2>
-              <p>Status progres penanganan risiko</p>
+              <p>Status progres tindak lanjut Profile Risiko</p>
             </div>
           </div>
-          <div class="bar-row"><span>Selesai</span><div><i style="width:46%" class="green-bg"></i></div><b>23</b></div>
-          <div class="bar-row"><span>On track</span><div><i style="width:32%" class="blue-bg"></i></div><b>16</b></div>
-          <div class="bar-row"><span>Terlambat</span><div><i style="width:18%" class="amber-bg"></i></div><b>9</b></div>
-          <div class="bar-row"><span>Belum mulai</span><div><i style="width:4%" class="red-bg"></i></div><b>2</b></div>
+          <?php
+            $tot_r = max(1, (int)$kpis['total_risks']);
+            $st_selesai   = (int)($kpis['mitigation_stats']['selesai'] ?? 0);
+            $st_ontrack   = (int)($kpis['mitigation_stats']['on_track'] ?? 0);
+            $st_terlambat = (int)($kpis['mitigation_stats']['terlambat'] ?? 0);
+            $st_belum     = (int)($kpis['mitigation_stats']['belum_mulai'] ?? 0);
+          ?>
+          <div class="bar-row"><span>Selesai</span><div><i id="mitBarSelesai" style="width:<?= round(($st_selesai / $tot_r) * 100) ?>%" class="green-bg"></i></div><b id="mitCountSelesai"><?= $st_selesai ?></b></div>
+          <div class="bar-row"><span>On track</span><div><i id="mitBarOntrack" style="width:<?= round(($st_ontrack / $tot_r) * 100) ?>%" class="blue-bg"></i></div><b id="mitCountOntrack"><?= $st_ontrack ?></b></div>
+          <div class="bar-row"><span>Dalam proses</span><div><i id="mitBarTerlambat" style="width:<?= round(($st_terlambat / $tot_r) * 100) ?>%" class="amber-bg"></i></div><b id="mitCountTerlambat"><?= $st_terlambat ?></b></div>
+          <div class="bar-row"><span>Belum mulai</span><div><i id="mitBarBelum" style="width:<?= round(($st_belum / $tot_r) * 100) ?>%" class="red-bg"></i></div><b id="mitCountBelum"><?= $st_belum ?></b></div>
         </article>
 
         <article class="panel">
           <div class="panel-head">
             <div>
               <h2>Key Risk Indicators</h2>
-              <p>Indikator termonitor dari database</p>
+              <p>Indikator risiko termonitor dari Profile Risiko</p>
             </div>
-            <span class="tag"><?= count($kri) ?> INDIKATOR</span>
+            <span class="tag" id="tagKriOverviewCount"><?= count($kri) ?> INDIKATOR</span>
           </div>
-          <div id="kriOverviewList">
-            <?php foreach (array_slice($kri, 0, 3) as $row): ?>
-              <div class="kri-row">
-                <div>
-                  <strong><?= htmlspecialchars($row['indicator']) ?></strong>
-                  <small><?= htmlspecialchars($row['directorate']) ?></small>
-                </div>
-                <b><?= htmlspecialchars($row['value']) ?></b>
-                <span class="status <?= $row['status'] === 'Kritis' ? 'critical' : ($row['status'] === 'Waspada' ? 'warning' : '') ?>">
-                  <?= strtoupper(htmlspecialchars($row['status'])) ?>
-                </span>
-              </div>
-            <?php endforeach; ?>
-          </div>
+          <div id="kriOverviewList"></div>
         </article>
       </section>
     </div>
@@ -509,62 +503,358 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
     const colors = s => s >= 20 ? '#d93b45' : s >= 15 ? '#ed8351' : s >= 10 ? '#f3a62a' : s >= 5 ? '#d5bd3e' : '#1c9b68';
     const riskList = document.getElementById('topRisks');
 
-    function renderTop(data = allRisks) {
-      if (!riskList) return;
-      riskList.innerHTML = data.slice().sort((a, b) => b.residual - a.residual).slice(0, 5).map((r, i) => `
-        <div class="risk-item" data-id="${r.id}">
-          <span class="rank">${i + 1}</span>
-          <div>
-            <strong>${r.title}</strong>
-            <small>${r.id} · ${r.owner}</small>
-          </div>
-          <span class="score" style="background:${colors(r.residual)}">${r.residual}</span>
-        </div>
-      `).join('');
-      riskList.querySelectorAll('.risk-item').forEach(x => x.onclick = () => openRisk(x.dataset.id));
+    function getEffectiveScore(p) {
+      return parseInt(p.skala_risiko_current, 10)
+          || parseInt(p.skala_risiko_residual, 10)
+          || parseInt(p.skala_risiko_inheren, 10)
+          || 1;
     }
 
-    function renderTable(data = allRisks) {
+    function parseRupiahNum(str) {
+      if (!str) return 0;
+      const cleaned = String(str).replace(/[^0-9]/g, '');
+      return parseFloat(cleaned) || 0;
+    }
+
+    function formatRupiahShortJs(num) {
+      const n = parseFloat(num) || 0;
+      if (n <= 0) return 'Rp 0';
+      if (n >= 1000000000000) return 'Rp ' + (n / 1000000000000).toFixed(2).replace('.', ',') + ' T';
+      if (n >= 1000000000) return 'Rp ' + (n / 1000000000).toFixed(2).replace('.', ',') + ' M';
+      if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1).replace('.', ',') + ' Jt';
+      return 'Rp ' + n.toLocaleString('id-ID');
+    }
+
+    function getProfileProgressPct(p) {
+      const raw = p.proses_tindak_lanjut_persen || p.persentase_per_risiko || '0';
+      const val = parseFloat(String(raw).replace(/[^0-9.]/g, '')) || 0;
+      return Math.max(0, Math.min(100, Math.round(val)));
+    }
+
+    function renderProfileCardHtml(item, idx) {
+      const inhMeta = getProfileScaleMeta(item.skala_risiko_inheren);
+      const resMeta = getProfileScaleMeta(item.skala_risiko_residual);
+      const curScore = item.skala_risiko_current || item.skala_risiko_residual || item.skala_risiko_inheren || '-';
+      const curMeta = getProfileScaleMeta(curScore);
+
+      return `
+        <div class="hm-risk-card">
+          <!-- Card Header -->
+          <div class="hm-risk-head">
+            <div class="hm-risk-title-wrap">
+              <span class="hm-risk-num">${idx + 1}</span>
+              <div>
+                <div class="hm-risk-title">${item.nama_risiko || '-'}</div>
+                <div class="hm-risk-subchips">
+                  <span class="hm-chip dept">🏢 ${item.department_name || 'Tanpa Department'}</span>
+                  ${item.kategori_risiko ? `<span class="hm-chip">🏷️ ${item.kategori_risiko}${item.kategori_risiko_nama ? ' - ' + item.kategori_risiko_nama : ''}</span>` : ''}
+                  ${item.fungsi_kerja ? `<span class="hm-chip">⚙️ ${item.fungsi_kerja}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <span class="hm-chip period" title="Periode Progress Monitoring Terakhir">
+              📅 ${(item.periode_current || '-') + ' ' + (item.tahun_current || '')}
+            </span>
+          </div>
+
+          <!-- 3-Column Score Progression Strip -->
+          <div class="hm-score-strip" style="border-bottom: none;">
+            <div class="hm-score-step">
+              <small>1. Risiko Inheren</small>
+              <div class="hm-score-badge-row">
+                <span class="hm-mini-score" style="background:${inhMeta.bg};color:${inhMeta.text};">
+                  ${item.skala_risiko_inheren || '-'} · ${inhMeta.label}
+                </span>
+              </div>
+              <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_kuantitatif || '0'}</span>
+            </div>
+
+            <div class="hm-score-step">
+              <small>2. Target Residual</small>
+              <div class="hm-score-badge-row">
+                <span class="hm-mini-score" style="background:${resMeta.bg};color:${resMeta.text};">
+                  ${item.skala_risiko_residual || '-'} · ${resMeta.label}
+                </span>
+              </div>
+              <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_residual || '0'}</span>
+            </div>
+
+            <div class="hm-score-step active-step">
+              <small>3. Realisasi Current</small>
+              <div class="hm-score-badge-row">
+                <span class="hm-mini-score" style="background:${curMeta.bg};color:${curMeta.text};">
+                  ${item.skala_risiko_current || '-'} · ${item.skala_risiko_current ? curMeta.label : 'Belum dimonitor'}
+                </span>
+              </div>
+              <span class="hm-exp-val" style="color:#0f172a;">Eksposur: Rp ${item.eksposur_kuantitatif_current || item.eksposure_residual || '0'}</span>
+            </div>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="hm-card-foot" style="justify-content: flex-end;">
+            <a href="<?= site_url('menrisk/profil_risiko/') ?>${item.id}?mode=view" class="ghost" style="height:31px;padding:0 11px;font-size:11.5px;text-decoration:none;">
+              👁 Detail Formulir
+            </a>
+            <a href="<?= site_url('menrisk/monitoring_profil_risiko/') ?>${item.id}" class="primary" style="height:31px;padding:0 12px;font-size:11.5px;text-decoration:none;margin-left:0;">
+              📊 Progress Monitoring
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function openSingleProfilModal(id) {
+      const item = (allProfilRisiko || []).find(x => String(x.id) === String(id));
+      if (!item) return;
+
+      const modalCard = document.getElementById('modalCard');
+      const modalEyebrow = document.getElementById('modalEyebrow');
+      if (modalCard) modalCard.classList.add('modal-card-wide');
+      if (modalEyebrow) modalEyebrow.textContent = 'PROFILE RISIKO · RINGKASAN EKSEKUTIF';
+
+      const effScore = getEffectiveScore(item);
+      const levelInfo = getProfileScaleMeta(effScore);
+
+      document.getElementById('modalTitle').textContent = item.nama_risiko || 'Detail Profile Risiko';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="hm-modal-summary">
+          <div class="hm-score-box" style="background:${levelInfo.bg};color:${levelInfo.text};">
+            ${effScore}
+          </div>
+          <div class="hm-summary-meta">
+            <strong>Level Risiko: ${levelInfo.label} (Skala Efektif ${effScore} / 25)</strong>
+            <span>${item.department_name || '-'} · ${levelInfo.desc}</span>
+          </div>
+        </div>
+        <div class="hm-risk-list-scroll">
+          ${renderProfileCardHtml(item, 0)}
+        </div>
+      `;
+      document.getElementById('modal').classList.add('show');
+    }
+
+    function updateDashboardCardsFromProfile(data = allProfilRisiko) {
+      const list = data || [];
+      const total = list.length;
+
+      let monitored = 0;
+      let critical = 0;
+      let highCount = 0;
+      let modHighCount = 0;
+      let appDalam = 0;
+      let appMendekati = 0;
+      let appMelebihi = 0;
+      let totalInherentRp = 0;
+      let totalCurrentRp = 0;
+      let sumProgress = 0;
+      let stSelesai = 0, stOntrack = 0, stTerlambat = 0, stBelum = 0;
+
+      list.forEach(p => {
+        const cur = parseInt(p.skala_risiko_current, 10) || 0;
+        if (cur > 0) monitored++;
+
+        const eff = getEffectiveScore(p);
+        if (eff >= 20) {
+          critical++;
+          highCount++;
+        } else if (eff >= 16) {
+          critical++;
+          modHighCount++;
+        }
+
+        if (eff >= 16) appMelebihi++;
+        else if (eff >= 12) appMendekati++;
+        else appDalam++;
+
+        const inhRp = parseRupiahNum(p.eksposure_kuantitatif);
+        const resRp = parseRupiahNum(p.eksposure_residual);
+        const curRp = (p.eksposur_kuantitatif_current !== null && p.eksposur_kuantitatif_current !== undefined && String(p.eksposur_kuantitatif_current) !== '')
+          ? parseRupiahNum(p.eksposur_kuantitatif_current)
+          : (resRp > 0 ? resRp : inhRp);
+
+        totalInherentRp += inhRp;
+        totalCurrentRp  += curRp;
+
+        const pct = getProfileProgressPct(p);
+        sumProgress += pct;
+
+        const statusTxt = String(p.status_progres_tindak_lanjut || '').toLowerCase();
+        if (pct >= 100 || statusTxt.includes('selesai')) {
+          stSelesai++;
+        } else if (pct >= 50) {
+          stOntrack++;
+        } else if (pct > 0 || cur > 0) {
+          stTerlambat++;
+        } else {
+          stBelum++;
+        }
+      });
+
+      const avgProgress = total > 0 ? Math.round(sumProgress / total) : 0;
+      const dalamPct = total > 0 ? Math.round((appDalam / total) * 100) : 100;
+      const mendekatiDeg = total > 0 ? Math.round(((appDalam + appMendekati) / total) * 360) : 360;
+      const dalamDeg = total > 0 ? Math.round((appDalam / total) * 360) : 360;
+
+      let expDiffPct = 0;
+      if (totalInherentRp > 0 && totalCurrentRp <= totalInherentRp) {
+        expDiffPct = (((totalInherentRp - totalCurrentRp) / totalInherentRp) * 100).toFixed(1);
+      }
+
+      const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      setText('alertCount', critical);
+      setText('totalRisk', total);
+      setText('totalRiskSub', monitored + ' risiko telah dimonitor');
+      setText('criticalRisk', critical);
+      setText('criticalRiskSub', highCount + ' High · ' + modHighCount + ' Mod. to High');
+      setText('residualExposure', formatRupiahShortJs(totalCurrentRp));
+      setText('residualExposureSub', expDiffPct > 0 ? ('↓ ' + expDiffPct + '% dari inherent (' + formatRupiahShortJs(totalInherentRp) + ')') : ('Inherent: ' + formatRupiahShortJs(totalInherentRp)));
+      setText('kpiMitigation', avgProgress + '%');
+      setText('kpiMitigationSub', (stSelesai + stOntrack) + ' dari ' + total + ' risiko berjalan baik');
+
+      const kpiMitBar = document.getElementById('kpiMitigationBar');
+      if (kpiMitBar) kpiMitBar.style.width = avgProgress + '%';
+
+      // Risk Appetite Card
+      setText('appetitePct', dalamPct + '%');
+      setText('appetiteDalam', appDalam);
+      setText('appetiteMendekati', appMendekati);
+      setText('appetiteMelebihi', appMelebihi);
+      setText('appetiteCalloutTitle', appMelebihi + ' risiko melampaui appetite');
+
+      const donutEl = document.getElementById('appetiteDonut');
+      if (donutEl) {
+        donutEl.style.background = `conic-gradient(var(--green) 0deg ${dalamDeg}deg, var(--amber) ${dalamDeg}deg ${mendekatiDeg}deg, var(--red) ${mendekatiDeg}deg 360deg)`;
+      }
+
+      // Mitigation Performance Card
+      const denom = Math.max(1, total);
+      const setBar = (barId, cntId, val) => {
+        const b = document.getElementById(barId);
+        if (b) b.style.width = Math.round((val / denom) * 100) + '%';
+        setText(cntId, val);
+      };
+      setBar('mitBarSelesai', 'mitCountSelesai', stSelesai);
+      setBar('mitBarOntrack', 'mitCountOntrack', stOntrack);
+      setBar('mitBarTerlambat', 'mitCountTerlambat', stTerlambat);
+      setBar('mitBarBelum', 'mitCountBelum', stBelum);
+    }
+
+    function renderTop(data = allProfilRisiko) {
+      if (!riskList) return;
+      const sorted = (data || []).slice().sort((a, b) => getEffectiveScore(b) - getEffectiveScore(a)).slice(0, 5);
+      if (sorted.length === 0) {
+        riskList.innerHTML = `<div style="padding:18px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data Profile Risiko.</div>`;
+        return;
+      }
+      riskList.innerHTML = sorted.map((p, i) => {
+        const effScore = getEffectiveScore(p);
+        const meta = getProfileScaleMeta(effScore);
+        const subText = [p.department_name || 'Tanpa Dept', p.kategori_risiko_nama || p.kategori_risiko || p.fungsi_kerja || ''].filter(Boolean).join(' · ');
+        return `
+          <div class="risk-item" data-id="${p.id}">
+            <span class="rank">${i + 1}</span>
+            <div>
+              <strong>${p.nama_risiko || '-'}</strong>
+              <small>${subText}</small>
+            </div>
+            <span class="score" style="background:${meta.bg};color:${meta.text};">${effScore}</span>
+          </div>
+        `;
+      }).join('');
+      riskList.querySelectorAll('.risk-item').forEach(x => x.onclick = () => openSingleProfilModal(x.dataset.id));
+    }
+
+    function renderTable(data = allProfilRisiko) {
       const tableBody = document.getElementById('riskTable');
       if (!tableBody) return;
-      tableBody.innerHTML = data.map(r => `
-        <tr>
-          <td><b>${r.id}</b></td>
-          <td>${r.title}</td>
-          <td>${r.owner}</td>
-          <td><span class="pill">${r.cat}</span></td>
-          <td><span class="pill score-pill" style="background:${colors(r.inherent)}">${r.inherent}</span></td>
-          <td><span class="pill score-pill" style="background:${colors(r.residual)}">${r.residual}</span></td>
-          <td><span class="status ${r.appetite === 'Melebihi' ? 'critical' : r.appetite === 'Mendekati' ? 'warning' : ''}">${r.appetite}</span></td>
-          <td><button class="table-btn" data-id="${r.id}">Detail</button></td>
-        </tr>
-      `).join('');
-      tableBody.querySelectorAll('.table-btn').forEach(x => x.onclick = () => openRisk(x.dataset.id));
+      const list = data || [];
+      if (list.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);">Belum ada data Profile Risiko yang sesuai filter.</td></tr>`;
+        return;
+      }
+      tableBody.innerHTML = list.map((p, idx) => {
+        const inh = parseInt(p.skala_risiko_inheren, 10) || 0;
+        const eff = getEffectiveScore(p);
+        const inhMeta = getProfileScaleMeta(inh);
+        const effMeta = getProfileScaleMeta(eff);
+        const appetite = eff >= 16 ? 'Melebihi' : eff >= 12 ? 'Mendekati' : 'Dalam';
+        const code = 'PR-' + String(p.id).padStart(3, '0');
+        return `
+          <tr>
+            <td><b>${code}</b></td>
+            <td>${p.nama_risiko || '-'}</td>
+            <td>${p.department_name || '-'}</td>
+            <td><span class="pill">${p.kategori_risiko_nama || p.kategori_risiko || p.fungsi_kerja || '-'}</span></td>
+            <td><span class="pill score-pill" style="background:${inhMeta.bg};color:${inhMeta.text}">${inh || '-'}</span></td>
+            <td><span class="pill score-pill" style="background:${effMeta.bg};color:${effMeta.text}">${eff}</span></td>
+            <td><span class="status ${appetite === 'Melebihi' ? 'critical' : appetite === 'Mendekati' ? 'warning' : ''}">${appetite}</span></td>
+            <td><button class="table-btn" data-id="${p.id}">Detail</button></td>
+          </tr>
+        `;
+      }).join('');
+      tableBody.querySelectorAll('.table-btn').forEach(x => x.onclick = () => openSingleProfilModal(x.dataset.id));
     }
 
-    function renderMitigations(data = allRisks) {
+    function renderMitigations(data = allProfilRisiko) {
       const el = document.getElementById('mitigationCards');
       if (!el) return;
-      el.innerHTML = data.map(r => `
-        <article class="mit-card">
-          <span class="status ${r.progress < 60 ? 'critical' : r.progress < 75 ? 'warning' : ''}">${r.id}</span>
-          <h3>${r.title}</h3>
-          <p>${r.mitigation}</p>
-          <div class="mit-meta"><span>${r.owner}</span><b>${r.progress}%</b></div>
-          <div class="progress">
-            <span style="width:${r.progress}%;background:${r.progress < 60 ? '#d93b45' : r.progress < 75 ? '#f3a62a' : '#1c9b68'}"></span>
+      const list = data || [];
+      if (list.length === 0) {
+        el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);">Belum ada data mitigasi Profile Risiko.</div>`;
+        return;
+      }
+      el.innerHTML = list.map(p => {
+        const progress = getProfileProgressPct(p);
+        const code = 'PR-' + String(p.id).padStart(3, '0');
+        return `
+          <article class="mit-card">
+            <span class="status ${progress < 50 ? 'critical' : progress < 80 ? 'warning' : ''}">${code}</span>
+            <h3>${p.nama_risiko || '-'}</h3>
+            <p>${p.kegiatan_mitigasi || p.uraian_tindak_lanjut || 'Belum ada rincian rencana tindak lanjut.'}</p>
+            <div class="mit-meta"><span>${p.department_name || p.pic || '-'}</span><b>${progress}%</b></div>
+            <div class="progress">
+              <span style="width:${progress}%;background:${progress < 50 ? '#d93b45' : progress < 80 ? '#f3a62a' : '#1c9b68'}"></span>
+            </div>
+            <div class="mit-meta"><small>Target / Periode</small><strong>${p.target_waktu || ((p.periode_current || '-') + ' ' + (p.tahun_current || ''))}</strong></div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderKriOverview(kriData = allKri) {
+      const listEl = document.getElementById('kriOverviewList');
+      const tagEl  = document.getElementById('tagKriOverviewCount');
+      const items  = kriData || [];
+      if (tagEl) tagEl.textContent = items.length + ' INDIKATOR';
+      if (!listEl) return;
+
+      if (items.length === 0) {
+        listEl.innerHTML = `<div style="padding:18px;text-align:center;color:var(--muted);font-size:13px;">Belum ada Key Risk Indicator (KRI) terdaftar.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.slice(0, 4).map(x => `
+        <div class="kri-row">
+          <div>
+            <strong>${x.indicator}</strong>
+            <small>Threshold: ${x.threshold} · ${x.directorate || '-'}</small>
           </div>
-          <div class="mit-meta"><small>Target</small><strong>${r.due}</strong></div>
-        </article>
+          <span class="pill ${x.status_class || ''}">${x.value} · ${x.status}</span>
+        </div>
       `).join('');
     }
 
     function renderKri(kriData = allKri) {
       const el = document.getElementById('kriBoard');
       if (!el) return;
-      el.innerHTML = kriData.map(x => `
+      const items = kriData || [];
+      if (items.length === 0) {
+        el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);">Belum ada data Key Risk Indicator.</div>`;
+        return;
+      }
+      el.innerHTML = items.map(x => `
         <article class="kri-card">
-          <span class="status ${x.status === 'Kritis' ? 'critical' : x.status === 'Waspada' ? 'warning' : ''}">${x.status.toUpperCase()}</span>
+          <span class="status ${x.status === 'Kritis' ? 'critical' : x.status === 'Waspada' ? 'warning' : ''}">${(x.status || 'AMAN').toUpperCase()}</span>
           <h3>${x.indicator}</h3>
           <strong style="font-size:25px;display:block;margin:8px 0">${x.value}</strong>
           <p>Threshold: ${x.threshold} · ${x.directorate}</p>
@@ -731,7 +1021,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
           let colorClass = 'pcell-low';
           let levelLabel = 'Low';
-          if (score >= 21) {
+          if (score >= 20) {
             colorClass = 'pcell-high';
             levelLabel = 'High';
           } else if (score >= 16) {
@@ -772,7 +1062,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
     function getProfileScaleMeta(score) {
       const s = parseInt(score, 10) || 0;
-      if (s >= 21) return { label: 'High', bg: '#e52e20', text: '#ffffff', desc: 'Risiko sangat tinggi / kritis — memerlukan tindakan mitigasi prioritas segera.' };
+      if (s >= 20) return { label: 'High', bg: '#e52e20', text: '#ffffff', desc: 'Risiko sangat tinggi / kritis — memerlukan tindakan mitigasi prioritas segera.' };
       if (s >= 16) return { label: 'Moderate to High', bg: '#f4b042', text: '#17243a', desc: 'Risiko menengah ke tinggi — memerlukan pemantauan intensif dan pengendalian.' };
       if (s >= 12) return { label: 'Moderate', bg: '#ffff00', text: '#17243a', desc: 'Risiko moderat — perlu tindak lanjut sesuai rencana mitigasi berkala.' };
       if (s >= 6)  return { label: 'Low to Moderate', bg: '#a9d08e', text: '#17243a', desc: 'Risiko rendah ke moderat — kondisi cukup terkendali dengan pengawasan rutin.' };
@@ -786,13 +1076,13 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       if (modalCard) modalCard.classList.add('modal-card-wide');
       if (modalEyebrow) modalEyebrow.textContent = 'PROFILE RISIKO · PROGRESS MONITORING CURRENT';
 
-      // Cari koordinat Dampak & Kemungkinan pada matriks 5x5 sesuai contoh-heatmap.png
+      // Cari koordinat Dampak & Kemungkinan pada matriks 5x5
       const matrixRows = [
         [11, 16, 20, 23, 25],
         [ 7, 12, 17, 21, 24],
         [ 4,  8, 13, 18, 22],
-        [ 2,  5,  9, 14, 19],
-        [ 1,  3,  6, 10, 15]
+        [ 2,  6,  9, 14, 19],
+        [ 1,  3,  5, 10, 15]
       ];
       let coordDampak = '-', coordProb = '-';
       matrixRows.forEach((row, rIdx) => {
@@ -836,76 +1126,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           </div>
         `;
       } else {
-        const listHtml = items.map((item, idx) => {
-          const inhMeta = getProfileScaleMeta(item.skala_risiko_inheren);
-          const resMeta = getProfileScaleMeta(item.skala_risiko_residual);
-          const curMeta = getProfileScaleMeta(item.skala_risiko_current);
-
-          return `
-            <div class="hm-risk-card">
-              <!-- Card Header -->
-              <div class="hm-risk-head">
-                <div class="hm-risk-title-wrap">
-                  <span class="hm-risk-num">${idx + 1}</span>
-                  <div>
-                    <div class="hm-risk-title">${item.nama_risiko || '-'}</div>
-                    <div class="hm-risk-subchips">
-                      <span class="hm-chip dept">🏢 ${item.department_name || 'Tanpa Department'}</span>
-                      ${item.kategori_risiko ? `<span class="hm-chip">🏷️ ${item.kategori_risiko}${item.kategori_risiko_nama ? ' - ' + item.kategori_risiko_nama : ''}</span>` : ''}
-                      ${item.fungsi_kerja ? `<span class="hm-chip">⚙️ ${item.fungsi_kerja}</span>` : ''}
-                    </div>
-                  </div>
-                </div>
-                <span class="hm-chip period" title="Periode Progress Monitoring Terakhir">
-                  📅 ${(item.periode_current || '-') + ' ' + (item.tahun_current || '')}
-                </span>
-              </div>
-
-              <!-- 3-Column Score Progression Strip -->
-              <div class="hm-score-strip" style="border-bottom: none;">
-                <div class="hm-score-step">
-                  <small>1. Risiko Inheren</small>
-                  <div class="hm-score-badge-row">
-                    <span class="hm-mini-score" style="background:${inhMeta.bg};color:${inhMeta.text};">
-                      ${item.skala_risiko_inheren || '-'} · ${inhMeta.label}
-                    </span>
-                  </div>
-                  <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_kuantitatif || '0'}</span>
-                </div>
-
-                <div class="hm-score-step">
-                  <small>2. Target Residual</small>
-                  <div class="hm-score-badge-row">
-                    <span class="hm-mini-score" style="background:${resMeta.bg};color:${resMeta.text};">
-                      ${item.skala_risiko_residual || '-'} · ${resMeta.label}
-                    </span>
-                  </div>
-                  <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_residual || '0'}</span>
-                </div>
-
-                <div class="hm-score-step active-step">
-                  <small>3. Realisasi Current</small>
-                  <div class="hm-score-badge-row">
-                    <span class="hm-mini-score" style="background:${curMeta.bg};color:${curMeta.text};">
-                      ${item.skala_risiko_current} · ${curMeta.label}
-                    </span>
-                  </div>
-                  <span class="hm-exp-val" style="color:#0f172a;">Eksposur: Rp ${item.eksposur_kuantitatif_current || '0'}</span>
-                </div>
-              </div>
-
-              <!-- Card Footer -->
-              <div class="hm-card-foot" style="justify-content: flex-end;">
-                <a href="<?= site_url('menrisk/profil_risiko/') ?>${item.id}?mode=view" class="ghost" style="height:31px;padding:0 11px;font-size:11.5px;text-decoration:none;">
-                  👁 Detail Formulir
-                </a>
-                <a href="<?= site_url('menrisk/monitoring_profil_risiko/') ?>${item.id}" class="primary" style="height:31px;padding:0 12px;font-size:11.5px;text-decoration:none;margin-left:0;">
-                  📊 Progress Monitoring
-                </a>
-              </div>
-            </div>
-          `;
-        }).join('');
+        const listHtml = items.map((item, idx) => renderProfileCardHtml(item, idx)).join('');
 
         document.getElementById('modalBody').innerHTML = `
           ${summaryHtml}
@@ -916,47 +1137,69 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       document.getElementById('modal').classList.add('show');
     }
 
-    function trend() {
+    function trend(data = allProfilRisiko) {
       const trendEl = document.getElementById('trendChart');
       if (!trendEl) return;
-      const months = ['Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'],
-            a = [82, 86, 81, 88, 91, 94],
-            b = [58, 61, 56, 53, 57, 54];
-      const points = v => v.map((n, i) => `${25 + i * 66},${170 - (n - 40) * 2}`).join(' ');
+
+      const list = (data || []).slice(0, 6);
+      const tagTrendEl = document.getElementById('tagTrendCount');
+      if (tagTrendEl) {
+        tagTrendEl.textContent = list.length + ' PROFILE RISIKO';
+      }
+
+      if (list.length === 0) {
+        trendEl.innerHTML = `<div style="padding:36px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data Profile Risiko untuk grafik perbandingan skor.</div>`;
+        return;
+      }
+
+      // Skala Y: skor 0 s/d 25 dipetakan ke Y=155 (skor 0) s/d Y=25 (skor 25)
+      const scoreToY = s => {
+        const val = Math.max(0, Math.min(25, parseInt(s, 10) || 0));
+        return Math.round(155 - (val / 25) * 130);
+      };
+
+      const count = list.length;
+      const stepX = count > 1 ? Math.floor(320 / (count - 1)) : 0;
+      const getX = i => count > 1 ? (35 + i * stepX) : 195;
+
+      const inhArr = list.map(p => parseInt(p.skala_risiko_inheren, 10) || 0);
+      const resArr = list.map(p => parseInt(p.skala_risiko_residual, 10) || parseInt(p.skala_risiko_inheren, 10) || 0);
+      const curArr = list.map(p => getEffectiveScore(p));
+
+      const buildPoints = arr => arr.map((v, i) => `${getX(i)},${scoreToY(v)}`).join(' ');
+
+      // Garis batas Risk Appetite (Skala 16 -> Y = scoreToY(16))
+      const thresholdY = scoreToY(16);
+
       trendEl.innerHTML = `
-        <svg viewBox="0 0 390 185" role="img" aria-label="Tren skor eksposur">
-          <g stroke="#e7ebf0" stroke-width="1">${[30, 70, 110, 150].map(y => `<line x1="24" y1="${y}" x2="370" y2="${y}"/>`).join('')}</g>
-          <line x1="24" y1="120" x2="370" y2="120" stroke="#d93b45" stroke-dasharray="5 5"/>
-          <polyline fill="none" stroke="#0a2342" stroke-width="3" points="${points(a)}"/>
-          <polyline fill="none" stroke="#00a89d" stroke-width="3" points="${points(b)}"/>
-          ${months.map((m, i) => `<text x="${25 + i * 66}" y="182" text-anchor="middle" font-size="9" fill="#7b8797">${m}</text>`).join('')}
-          ${b.map((n, i) => `<circle cx="${25 + i * 66}" cy="${170 - (n - 40) * 2}" r="3" fill="#00a89d"/>`).join('')}
+        <svg viewBox="0 0 390 185" role="img" aria-label="Perbandingan skor Inherent, Residual, dan Current Profile Risiko">
+          <g stroke="#e7ebf0" stroke-width="1">
+            ${[25, 20, 15, 10, 5, 0].map(sc => `
+              <line x1="28" y1="${scoreToY(sc)}" x2="370" y2="${scoreToY(sc)}"/>
+              <text x="20" y="${scoreToY(sc) + 3}" text-anchor="end" font-size="8.5" fill="#94a3b8">${sc}</text>
+            `).join('')}
+          </g>
+          <line x1="28" y1="${thresholdY}" x2="370" y2="${thresholdY}" stroke="#d93b45" stroke-dasharray="5 5"/>
+          ${count > 1 ? `
+            <polyline fill="none" stroke="#0a2342" stroke-width="2.5" points="${buildPoints(inhArr)}"/>
+            <polyline fill="none" stroke="#f3a62a" stroke-width="2.5" stroke-dasharray="4 3" points="${buildPoints(resArr)}"/>
+            <polyline fill="none" stroke="#00a89d" stroke-width="3" points="${buildPoints(curArr)}"/>
+          ` : ''}
+          ${list.map((p, i) => {
+            const label = 'PR-' + String(p.id).padStart(2, '0');
+            return `
+              <text x="${getX(i)}" y="178" text-anchor="middle" font-size="9" font-weight="600" fill="#64748b">${label}</text>
+              <circle cx="${getX(i)}" cy="${scoreToY(inhArr[i])}" r="3.5" fill="#0a2342"><title>${p.nama_risiko || label} — Inherent: ${inhArr[i]}</title></circle>
+              <circle cx="${getX(i)}" cy="${scoreToY(resArr[i])}" r="3.5" fill="#f3a62a"><title>${p.nama_risiko || label} — Residual: ${resArr[i]}</title></circle>
+              <circle cx="${getX(i)}" cy="${scoreToY(curArr[i])}" r="4" fill="#00a89d"><title>${p.nama_risiko || label} — Current: ${curArr[i]}</title></circle>
+            `;
+          }).join('')}
         </svg>
       `;
     }
 
     function openRisk(id) {
-      const r = allRisks.find(x => x.id === id);
-      if (!r) return;
-      const modalCard = document.getElementById('modalCard');
-      const modalEyebrow = document.getElementById('modalEyebrow');
-      if (modalCard) modalCard.classList.remove('modal-card-wide');
-      if (modalEyebrow) modalEyebrow.textContent = 'RISK DETAIL';
-
-      document.getElementById('modalTitle').textContent = r.title;
-      document.getElementById('modalBody').innerHTML = `
-        <p>${r.mitigation}</p>
-        <div class="detail-grid">
-          <div><small>Risk owner</small><strong>${r.owner}</strong></div>
-          <div><small>Department</small><strong>${r.dir}</strong></div>
-          <div><small>Inherent score</small><strong>${r.inherent} · Ekstrem</strong></div>
-          <div><small>Residual score</small><strong>${r.residual}</strong></div>
-          <div><small>Progres mitigasi</small><strong>${r.progress}%</strong></div>
-          <div><small>Target selesai</small><strong>${r.due}</strong></div>
-        </div>
-        ${r.decision ? `<div class="decision"><strong>Keputusan yang dibutuhkan dari BOD</strong><br>${r.decision}</div>` : ''}
-      `;
-      document.getElementById('modal').classList.add('show');
+      openSingleProfilModal(id);
     }
 
     function changeView(id) {
@@ -975,7 +1218,29 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
     document.getElementById('modal').onclick = e => {
       if (e.target.id === 'modal') e.currentTarget.classList.remove('show');
     };
-    document.getElementById('showCritical').onclick = () => openRisk('R-001');
+    document.getElementById('showCritical').onclick = () => {
+      const critItems = (allProfilRisiko || []).filter(p => getEffectiveScore(p) >= 16);
+      const modalCard = document.getElementById('modalCard');
+      const modalEyebrow = document.getElementById('modalEyebrow');
+      if (modalCard) modalCard.classList.add('modal-card-wide');
+      if (modalEyebrow) modalEyebrow.textContent = 'HIGH PRIORITY ALERT · PROFILE RISIKO KRITIS';
+
+      document.getElementById('modalTitle').textContent = 'Daftar Profile Risiko Kritis (Skala ≥ 16)';
+      if (critItems.length === 0) {
+        document.getElementById('modalBody').innerHTML = `
+          <div style="text-align:center;padding:24px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;">
+            <p style="color:var(--muted);font-size:13px;">Tidak ada Profile Risiko yang berada pada level kritis (Skala ≥ 16) saat ini.</p>
+          </div>
+        `;
+      } else {
+        document.getElementById('modalBody').innerHTML = `
+          <div class="hm-risk-list-scroll">
+            ${critItems.map((item, idx) => renderProfileCardHtml(item, idx)).join('')}
+          </div>
+        `;
+      }
+      document.getElementById('modal').classList.add('show');
+    };
 
     // Modal Tambah Risiko Bindings
     const modalAddRisk = document.getElementById('modalAddRisk');
@@ -986,7 +1251,6 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
     if (btnOpenAddRisk) {
       btnOpenAddRisk.onclick = () => {
-        // Ambil ID risiko terbaru
         fetch('<?= site_url("menrisk/next_id") ?>')
           .then(r => r.json())
           .then(res => {
@@ -1030,7 +1294,6 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       badge.textContent = 'Skor: ' + score;
       badge.style.background = colors(score);
 
-      // Rekomendasi Appetite otomatis
       const appSelect = document.getElementById('new_appetite');
       if (score >= 15) {
         appSelect.value = 'Melebihi';
@@ -1074,13 +1337,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
             updateInherentScore();
             updateResidualScore();
 
-            // Tampilkan Toast
             const t = document.getElementById('toast');
             t.textContent = res.message || 'Risiko baru berhasil ditambahkan!';
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3500);
 
-            // Refresh dataset dashboard via AJAX
             fetch('<?= site_url("menrisk?ajax=1") ?>')
               .then(r => r.json())
               .then(dashData => {
@@ -1091,18 +1352,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
                   if (dashData.data.profil_risiko) {
                     allProfilRisiko = dashData.data.profil_risiko;
                   }
-
-                  // Update KPI UI
-                  const elTotal = document.getElementById('totalRisk');
-                  if (elTotal) elTotal.textContent = kpis.total_risks;
-                  const elCrit = document.getElementById('criticalRisk');
-                  if (elCrit) elCrit.textContent = kpis.critical_risks;
-                  const elAlert = document.getElementById('alertCount');
-                  if (elAlert) elAlert.textContent = kpis.critical_risks;
-
                   applyFilter();
-                  heatmap();
-                  profileCurrentHeatmap();
                   changeView('register');
                 }
               });
@@ -1120,31 +1370,48 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
     document.getElementById('search').oninput = e => {
       const q = e.target.value.toLowerCase();
-      renderTable(allRisks.filter(r => (r.title + r.owner + r.id).toLowerCase().includes(q)));
+      renderTable((allProfilRisiko || []).filter(p =>
+        ((p.nama_risiko || '') + ' ' + (p.department_name || '') + ' PR-' + String(p.id).padStart(3, '0')).toLowerCase().includes(q)
+      ));
     };
 
     function applyFilter() {
-      const deptEl = document.getElementById('department') || document.getElementById('directorate');
-      const d = deptEl ? deptEl.value : 'all',
-            c = document.getElementById('category').value;
-      const f = allRisks.filter(r => (d === 'all' || r.dir === d || String(r.department_id) === String(d)) && (c === 'all' || r.cat === c));
-      renderTop(f);
-      renderTable(f);
-      renderMitigations(f);
-      document.getElementById('totalRisk').textContent = f.length;
-      document.getElementById('criticalRisk').textContent = f.filter(r => r.residual >= 15).length;
+      const periodEl = document.getElementById('period');
+      const deptEl   = document.getElementById('department') || document.getElementById('directorate');
+      const catEl    = document.getElementById('category');
 
-      const fkri = allKri.filter(k => (d === 'all' || k.directorate === d || String(k.department_id) === String(d)));
-      renderKri(fkri);
+      const perVal = periodEl ? periodEl.value : 'Semua Periode';
+      const d      = deptEl ? deptEl.value : 'all';
+      const c      = catEl ? catEl.value : 'all';
 
-      const fProfil = (allProfilRisiko || []).filter(p => (d === 'all' || p.department_name === d || String(p.department_id) === String(d)));
+      const fProfil = (allProfilRisiko || []).filter(p => {
+        const pPer = ((p.periode_current || '') + ' ' + (p.tahun_current || '')).trim();
+        const matchPer  = (perVal === 'Semua Periode' || perVal === 'all' || pPer === perVal);
+        const matchDept = (d === 'all' || p.department_name === d || String(p.department_id) === String(d));
+        const pCat      = p.kategori_risiko_nama || p.kategori_risiko || p.fungsi_kerja || '';
+        const matchCat  = (c === 'all' || pCat === c || p.kategori_risiko === c);
+        return matchPer && matchDept && matchCat;
+      });
+
+      updateDashboardCardsFromProfile(fProfil);
       profileCurrentHeatmap(fProfil);
+      renderTop(fProfil);
+      trend(fProfil);
+      renderTable(fProfil);
+      renderMitigations(fProfil);
+
+      const fkri = (allKri || []).filter(k => (d === 'all' || k.directorate === d || String(k.department_id) === String(d)));
+      renderKri(fkri);
+      renderKriOverview(fkri);
     }
 
-    const deptFilter = document.getElementById('department') || document.getElementById('directorate');
+    const periodFilter = document.getElementById('period');
+    const deptFilter   = document.getElementById('department') || document.getElementById('directorate');
+    if (periodFilter) periodFilter.onchange = applyFilter;
     if (deptFilter) deptFilter.onchange = applyFilter;
     document.getElementById('category').onchange = applyFilter;
     document.getElementById('reset').onclick = () => {
+      if (periodFilter) periodFilter.selectedIndex = 0;
       if (deptFilter) deptFilter.value = 'all';
       document.getElementById('category').value = 'all';
       document.getElementById('search').value = '';
@@ -1155,18 +1422,17 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       const t = document.getElementById('toast');
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2600);
-      // Panggil endpoint export_brief jika diinginkan
-      // window.open('<?= site_url("menrisk/export_brief") ?>', '_blank');
     };
 
-    // Inisialisasi awal
-    heatmap();
-    profileCurrentHeatmap();
-    trend();
-    renderTop();
-    renderTable();
-    renderMitigations();
-    renderKri();
+    // Inisialisasi awal seluruh Card dari Profile Risiko
+    updateDashboardCardsFromProfile(allProfilRisiko);
+    profileCurrentHeatmap(allProfilRisiko);
+    trend(allProfilRisiko);
+    renderTop(allProfilRisiko);
+    renderTable(allProfilRisiko);
+    renderMitigations(allProfilRisiko);
+    renderKri(allKri);
+    renderKriOverview(allKri);
 
     // Auto switch view jika ada hash pada URL (misal #register dari halaman lain)
     const hash = window.location.hash.replace('#', '');

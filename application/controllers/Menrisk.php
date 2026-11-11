@@ -32,7 +32,7 @@ class Menrisk extends CI_Controller {
      */
     public function index() {
         // Tangkap parameter filter (GET)
-        $selected_period      = $this->input->get('period', TRUE) ?: 'September 2026';
+        $selected_period      = $this->input->get('period', TRUE) ?: 'Semua Periode';
         $selected_department  = $this->input->get('department', TRUE) ?: $this->input->get('directorate', TRUE) ?: 'all';
         $selected_category    = $this->input->get('category', TRUE) ?: 'all';
         $search_keyword       = $this->input->get('search', TRUE) ?: '';
@@ -55,45 +55,63 @@ class Menrisk extends CI_Controller {
             $allowed_dept_ids = array_map('intval', array_column($user_depts, 'id'));
         }
 
-        // 1. Ambil data risks dari Model (SQL Server dbo.risks) sesuai hak akses
-        $filters = [
-            'period'           => $selected_period,
-            'dir'              => $selected_department,
-            'cat'              => $selected_category,
-            'search'           => $search_keyword,
-            'allowed_dept_ids' => $allowed_dept_ids
-        ];
-        $risks = $this->Risk_model->get_all($filters);
-
-        // 2. Ambil data Key Risk Indicators (KRI) dari Model (SQL Server dbo.kri) sesuai hak akses
-        $kri = $this->Kri_model->get_all($selected_period, $allowed_dept_ids, $selected_department);
-
-        // 3. Hitung KPI dan Agregasi Heatmap menggunakan Library Risk_calculator
-        $kpis = $this->risk_calculator->compute_kpis($risks);
-        $heatmap_matrix = $this->risk_calculator->compute_heatmap_matrix($risks);
-
-        // 3b. Ambil data Daftar Profile Risiko beserta data Progress Monitoring Skala Rasio (Current)
-        $this->load->model('FormulirRisiko_model');
+        // 1. Ambil data Daftar Profile Risiko beserta data Progress Monitoring Skala Rasio (Current)
+        $this->load->model(['FormulirRisiko_model', 'KeyRiskIndicator_model']);
         $profil_risiko_list = $this->FormulirRisiko_model->get_all_formulir($allowed_dept_ids);
 
-        // 4. Opsi list dropdown filter Department sesuai hak akses
+        // 2. Ambil data Key Risk Indicators (KRI) yang berelasi ke Profile Risiko
+        $kri_master_list = $this->KeyRiskIndicator_model->get_all_kri();
+        $kri = [];
+        foreach ($kri_master_list as $km) {
+            if (is_array($allowed_dept_ids) && !empty($km->department_id) && !in_array((int)$km->department_id, $allowed_dept_ids)) {
+                continue;
+            }
+            $th = strtolower((string)($km->last_hasil_threshold ?? 'aman'));
+            $status_label = ($th === 'bahaya') ? 'Kritis' : (($th === 'hati_hati') ? 'Waspada' : 'Normal');
+            $kri[] = [
+                'id'            => $km->id,
+                'formulir_id'   => $km->formulir_id,
+                'department_id' => $km->department_id,
+                'indicator'     => $km->deskripsi ?: $km->nama_risiko,
+                'nama_risiko'   => $km->nama_risiko,
+                'directorate'   => $km->department_name ?: 'Tanpa Department',
+                'value'         => $km->last_monitoring_val ?: 'Belum dimonitor',
+                'threshold'     => $km->ambang_batas_aman ?: '-',
+                'status'        => $status_label
+            ];
+        }
+
+        // 3. Hitung KPI menggunakan data Profile Risiko
+        $kpis = $this->risk_calculator->compute_profile_kpis($profil_risiko_list);
+        $risks = [];
+        $heatmap_matrix = [];
+
+        // 4. Opsi list dropdown filter Department, Periode, dan Kategori dari Profile Risiko
         $department_options = ['Semua Department' => 'all'];
         foreach ($available_depts as $dept) {
             $department_options[$dept['name']] = $dept['name'];
         }
 
+        $period_options = ['Semua Periode'];
+        $category_options = ['Semua Kategori' => 'all'];
+        foreach ($profil_risiko_list as $pr) {
+            if (!empty($pr->periode_current) && !empty($pr->tahun_current)) {
+                $p_str = trim($pr->periode_current . ' ' . $pr->tahun_current);
+                if (!in_array($p_str, $period_options)) {
+                    $period_options[] = $p_str;
+                }
+            }
+            if (!empty($pr->kategori_risiko)) {
+                $cat_label = $pr->kategori_risiko . (!empty($pr->kategori_risiko_nama) ? ' - ' . $pr->kategori_risiko_nama : '');
+                $category_options[$cat_label] = $pr->kategori_risiko;
+            }
+        }
+
         $filter_options = [
-            'periods'      => $this->Risk_model->get_distinct_periods(),
+            'periods'      => $period_options,
             'departments'  => $department_options,
             'directorates' => $department_options, // alias untuk kompatibilitas
-            'categories'   => [
-                'Semua Kategori' => 'all',
-                'Strategis'      => 'Strategis',
-                'Operasional'    => 'Operasional',
-                'Keuangan'       => 'Keuangan',
-                'Kepatuhan'      => 'Kepatuhan',
-                'Teknologi'      => 'Teknologi'
-            ]
+            'categories'   => $category_options
         ];
 
 
