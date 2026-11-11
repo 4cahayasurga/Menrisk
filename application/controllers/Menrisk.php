@@ -72,6 +72,10 @@ class Menrisk extends CI_Controller {
         $kpis = $this->risk_calculator->compute_kpis($risks);
         $heatmap_matrix = $this->risk_calculator->compute_heatmap_matrix($risks);
 
+        // 3b. Ambil data Daftar Profile Risiko beserta data Progress Monitoring Skala Rasio (Current)
+        $this->load->model('FormulirRisiko_model');
+        $profil_risiko_list = $this->FormulirRisiko_model->get_all_formulir($allowed_dept_ids);
+
         // 4. Opsi list dropdown filter Department sesuai hak akses
         $department_options = ['Semua Department' => 'all'];
         foreach ($available_depts as $dept) {
@@ -100,10 +104,11 @@ class Menrisk extends CI_Controller {
                 ->set_output(json_encode([
                     'status' => 'success',
                     'data'   => [
-                        'risks'   => $risks,
-                        'kri'     => $kri,
-                        'kpis'    => $kpis,
-                        'heatmap' => $heatmap_matrix
+                        'risks'         => $risks,
+                        'kri'           => $kri,
+                        'kpis'          => $kpis,
+                        'heatmap'       => $heatmap_matrix,
+                        'profil_risiko' => $profil_risiko_list
                     ]
                 ]));
         }
@@ -128,7 +133,8 @@ class Menrisk extends CI_Controller {
             'risks'                => $risks,
             'kri'                  => $kri,
             'kpis'                 => $kpis,
-            'heatmap_matrix'       => $heatmap_matrix
+            'heatmap_matrix'       => $heatmap_matrix,
+            'profil_risiko_list'   => $profil_risiko_list
         ];
 
 
@@ -743,6 +749,344 @@ class Menrisk extends CI_Controller {
             ->set_output(json_encode([
                 'status'  => 'success',
                 'message' => 'Data Progress Monitoring berhasil dihapus.'
+            ]));
+    }
+
+    // =========================================================================
+    // FITUR: KEY RISK INDICATORS (KRI) & PROGRESS MONITORING KRI
+    // =========================================================================
+
+    /**
+     * Halaman Tabel Daftar KRI (Key Risk Indicators)
+     */
+    public function daftar_kri() {
+        $this->load->model('KeyRiskIndicator_model');
+
+        $kri_list = $this->KeyRiskIndicator_model->get_all_kri();
+
+        $data = [
+            'title'        => 'Daftar Key Risk Indicators (KRI) — IFPRO Risk Command Center',
+            'current_user' => [
+                'nama'  => $this->session->userdata('nama'),
+                'level' => $this->session->userdata('level')
+            ],
+            'active_menu'  => 'kri',
+            'is_dashboard' => false,
+            'kri_list'     => $kri_list
+        ];
+
+        $this->load->view('daftar_kri_view', $data);
+    }
+
+    /**
+     * Shortcut Tambah KRI Baru
+     */
+    public function tambah_kri() {
+        $this->kri_form(null);
+    }
+
+    /**
+     * Halaman Formulir Input / Edit Key Risk Indicator (KRI)
+     */
+    public function kri_form($id = null) {
+        $this->load->model('KeyRiskIndicator_model');
+
+        $kri = null;
+        $form_mode = 'create';
+        if (!empty($id) && is_numeric($id)) {
+            $kri = $this->KeyRiskIndicator_model->get_kri_by_id((int)$id);
+            if ($kri) {
+                $form_mode = 'edit';
+            }
+        }
+
+        // Ambil list Nama Risiko & Penyebab dari Profile Risiko yang telah dibuat
+        $profile_risiko_options = $this->KeyRiskIndicator_model->get_all_profile_risiko_options();
+
+        $data = [
+            'title'                  => ($form_mode === 'edit' ? 'Edit ' : 'Tambah ') . 'Key Risk Indicator (KRI) — IFPRO Risk Command Center',
+            'current_user'           => [
+                'nama'  => $this->session->userdata('nama'),
+                'level' => $this->session->userdata('level')
+            ],
+            'active_menu'            => 'kri',
+            'is_dashboard'           => false,
+            'form_mode'              => $form_mode,
+            'kri'                    => $kri,
+            'profile_risiko_options' => $profile_risiko_options
+        ];
+
+        $this->load->view('kri_form_view', $data);
+    }
+
+    /**
+     * Simpan / Perbarui Master KRI ke Database (AJAX)
+     */
+    public function save_kri() {
+        $this->load->model('KeyRiskIndicator_model');
+
+        $kri_id       = (int)$this->input->post('kri_id', TRUE);
+        $formulir_id  = (int)$this->input->post('formulir_id', TRUE);
+        $nama_risiko  = trim((string)$this->input->post('nama_risiko', TRUE));
+        $penyebab     = trim((string)$this->input->post('penyebab_risiko', TRUE));
+        $deskripsi    = trim((string)$this->input->post('deskripsi', TRUE));
+        $polaritas    = trim((string)$this->input->post('polaritas', TRUE)) ?: 'Maximize';
+        $batas_aman   = trim((string)$this->input->post('ambang_batas_aman', TRUE));
+        $batas_hati   = trim((string)$this->input->post('ambang_batas_hati_hati', TRUE));
+        $batas_bahaya = trim((string)$this->input->post('ambang_batas_bahaya', TRUE));
+        $dept_id      = (int)$this->input->post('department_id', TRUE);
+
+        if (empty($nama_risiko) || empty($penyebab) || empty($deskripsi) || empty($batas_aman) || empty($batas_hati) || empty($batas_bahaya)) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Seluruh kolom (Nama Risiko, Penyebab, Deskripsi, dan ketiga Ambang Batas) wajib diisi.'
+                ]));
+        }
+
+        // Debounce proteksi cegah klik ganda pada create baru
+        if ($kri_id <= 0) {
+            $last_save = (float)$this->session->userdata('last_kri_save_time');
+            $now = microtime(true);
+            if ($last_save && ($now - $last_save) < 2.0) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'       => 'success',
+                        'message'      => 'Data KRI sedang diproses, mohon tunggu sebentar...',
+                        'redirect_url' => site_url('menrisk/daftar_kri')
+                    ]));
+            }
+            $this->session->set_userdata('last_kri_save_time', $now);
+        }
+
+        $payload = [
+            'formulir_id'            => ($formulir_id > 0) ? $formulir_id : null,
+            'department_id'          => ($dept_id > 0) ? $dept_id : null,
+            'nama_risiko'            => $nama_risiko,
+            'penyebab_risiko'        => $penyebab,
+            'deskripsi'              => $deskripsi,
+            'polaritas'              => $polaritas,
+            'ambang_batas_aman'      => $batas_aman,
+            'ambang_batas_hati_hati' => $batas_hati,
+            'ambang_batas_bahaya'    => $batas_bahaya,
+            'created_id'             => (string)($this->session->userdata('username') ?? $this->session->userdata('nama') ?? 'system')
+        ];
+
+        if ($kri_id > 0) {
+            $ok = $this->KeyRiskIndicator_model->update_kri($kri_id, $payload);
+            $msg = 'Data Key Risk Indicator berhasil diperbarui.';
+        } else {
+            $new_id = $this->KeyRiskIndicator_model->save_kri($payload);
+            $ok = ($new_id !== false && $new_id > 0);
+            $msg = 'Data Key Risk Indicator berhasil disimpan.';
+        }
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menyimpan data KRI ke database.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'       => 'success',
+                'message'      => $msg,
+                'redirect_url' => site_url('menrisk/daftar_kri')
+            ]));
+    }
+
+    /**
+     * Endpoint Hapus Master KRI (AJAX)
+     */
+    public function delete_kri($id) {
+        $this->load->model('KeyRiskIndicator_model');
+        $ok = $this->KeyRiskIndicator_model->delete_kri((int)$id);
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menghapus data KRI.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'  => 'success',
+                'message' => 'Data KRI berhasil dihapus.'
+            ]));
+    }
+
+    /**
+     * Halaman Evaluasi & Riwayat Progress Monitoring KRI
+     */
+    public function monitoring_kri($kri_id) {
+        $this->load->model('KeyRiskIndicator_model');
+
+        $kri = $this->KeyRiskIndicator_model->get_kri_by_id((int)$kri_id);
+        if (!$kri) {
+            show_404();
+            return;
+        }
+
+        $monitoring_list = $this->KeyRiskIndicator_model->get_monitoring_by_kri_id((int)$kri_id);
+
+        $data = [
+            'title'           => 'Progress Monitoring KRI — IFPRO Risk Command Center',
+            'current_user'    => [
+                'nama'  => $this->session->userdata('nama'),
+                'level' => $this->session->userdata('level')
+            ],
+            'active_menu'     => 'kri',
+            'is_dashboard'    => false,
+            'kri'             => $kri,
+            'monitoring_list' => $monitoring_list
+        ];
+
+        $this->load->view('monitoring_kri_view', $data);
+    }
+
+    /**
+     * Detail 1 Progress Monitoring KRI (AJAX)
+     */
+    public function detail_monitoring_kri($id) {
+        $this->load->model('KeyRiskIndicator_model');
+        $item = $this->KeyRiskIndicator_model->get_monitoring_by_id((int)$id);
+
+        if (!$item) {
+            return $this->output
+                ->set_status_header(404)
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Data monitoring tidak ditemukan.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status' => 'success',
+                'data'   => $item
+            ]));
+    }
+
+    /**
+     * Simpan / Update Progress Monitoring KRI (AJAX)
+     */
+    public function save_monitoring_kri() {
+        $this->load->model('KeyRiskIndicator_model');
+
+        $monitoring_id = (int)$this->input->post('monitoring_id', TRUE);
+        $kri_id        = (int)$this->input->post('kri_id', TRUE);
+        $tahun         = (int)$this->input->post('tahun', TRUE);
+        $periode       = trim((string)$this->input->post('periode', TRUE));
+        $periode_tipe  = trim((string)$this->input->post('periode_tipe', TRUE)) ?: 'triwulan';
+        $monitoring    = trim((string)$this->input->post('monitoring', TRUE));
+        $threshold     = trim((string)$this->input->post('hasil_threshold', TRUE)) ?: 'aman';
+        $hasil_ket     = trim((string)$this->input->post('hasil_keterangan', TRUE));
+        $tindak_lanjut = trim((string)$this->input->post('tindak_lanjut', TRUE));
+
+        if ($kri_id <= 0 || empty($tahun) || empty($periode) || empty($monitoring)) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Parameter Periode, Tahun, dan Monitoring wajib diisi.'
+                ]));
+        }
+
+        // Jika hasil KRI berada pada level MERAH (Batas Bahaya), maka wajib mengisi tindak lanjut
+        if ($threshold === 'bahaya' && empty($tindak_lanjut)) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Hasil KRI berada pada level MERAH (Batas Bahaya), maka kolom Tindak Lanjut wajib diisi.'
+                ]));
+        }
+
+        // Debounce: Cegah request double-submit pada penambahan monitoring KRI
+        if ($monitoring_id <= 0) {
+            $last_mon_kri = (float)$this->session->userdata('last_mon_kri_time');
+            $now = microtime(true);
+            if ($last_mon_kri && ($now - $last_mon_kri) < 2.0) {
+                return $this->output
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status'  => 'success',
+                        'message' => 'Data Progress Monitoring KRI sedang diproses...'
+                    ]));
+            }
+            $this->session->set_userdata('last_mon_kri_time', $now);
+        }
+
+        $payload = [
+            'kri_id'           => $kri_id,
+            'periode_tipe'     => $periode_tipe,
+            'tahun'            => $tahun,
+            'periode'          => $periode,
+            'monitoring'       => $monitoring,
+            'hasil_threshold'  => $threshold,
+            'hasil_keterangan' => $hasil_ket ?: null,
+            'tindak_lanjut'    => !empty($tindak_lanjut) ? $tindak_lanjut : null,
+            'created_id'       => (string)($this->session->userdata('username') ?? $this->session->userdata('nama') ?? 'system')
+        ];
+
+        if ($monitoring_id > 0) {
+            $ok = $this->KeyRiskIndicator_model->update_monitoring($monitoring_id, $payload);
+            $msg = 'Progress Monitoring KRI berhasil diperbarui.';
+        } else {
+            $ok = $this->KeyRiskIndicator_model->save_monitoring($payload);
+            $msg = 'Progress Monitoring KRI berhasil disimpan.';
+        }
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menyimpan data Progress Monitoring KRI.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'  => 'success',
+                'message' => $msg
+            ]));
+    }
+
+    /**
+     * Hapus 1 data Progress Monitoring KRI (AJAX)
+     */
+    public function delete_monitoring_kri($id) {
+        $this->load->model('KeyRiskIndicator_model');
+        $ok = $this->KeyRiskIndicator_model->delete_monitoring((int)$id);
+
+        if (!$ok) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status'  => 'error',
+                    'message' => 'Gagal menghapus data progress monitoring KRI.'
+                ]));
+        }
+
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode([
+                'status'  => 'success',
+                'message' => 'Data progress monitoring KRI berhasil dihapus.'
             ]));
     }
 }

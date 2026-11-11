@@ -19,9 +19,19 @@ class FormulirRisiko_model extends CI_Model {
 
     /**
      * Ambil seluruh daftar Formulir Profile Risiko (Master + Tab 1 Identifikasi Risiko)
-     * untuk ditampilkan pada tabel menu Profile Risiko
+     * untuk ditampilkan pada tabel menu Profile Risiko maupun Heatmap Executive Overview
      */
-    public function get_all_formulir() {
+    public function get_all_formulir($allowed_dept_ids = null) {
+        if (is_array($allowed_dept_ids) && empty($allowed_dept_ids)) {
+            return [];
+        }
+
+        $where_dept = "";
+        if (is_array($allowed_dept_ids) && !empty($allowed_dept_ids)) {
+            $safe_ids = array_map('intval', $allowed_dept_ids);
+            $where_dept = "WHERE (f.department_id IN (" . implode(',', $safe_ids) . ") OR f.department_id IS NULL)";
+        }
+
         $sql = "
             SELECT 
                 f.id,
@@ -50,6 +60,10 @@ class FormulirRisiko_model extends CI_Model {
                 t2.skala_risiko_inheren,
                 t4.skala_risiko_residual,
                 latest_mon.skala_risiko_realisasi AS skala_risiko_current,
+                latest_mon.skala_dampak_realisasi_current AS skala_dampak_current,
+                latest_mon.skala_probabilitas_realisasi_current AS skala_probabilitas_current,
+                latest_mon.eksposur_kuantitatif_current,
+                latest_mon.status_progres_tindak_lanjut,
                 latest_mon.periode AS periode_current,
                 latest_mon.tahun AS tahun_current
             FROM dbo.MNRSK_FormulirRisiko f
@@ -61,11 +75,19 @@ class FormulirRisiko_model extends CI_Model {
             LEFT JOIN dbo.MNRSK_KuantifikasiRisikoInheren t2 ON t2.formulir_id = f.id
             LEFT JOIN dbo.MNRSK_KuantifikasiRisikoResidual t4 ON t4.formulir_id = f.id
             OUTER APPLY (
-                SELECT TOP 1 pm.skala_risiko_realisasi, pm.periode, pm.tahun
+                SELECT TOP 1 
+                    pm.skala_risiko_realisasi,
+                    pm.skala_dampak_realisasi_current,
+                    pm.skala_probabilitas_realisasi_current,
+                    pm.eksposur_kuantitatif_current,
+                    pm.status_progres_tindak_lanjut,
+                    pm.periode,
+                    pm.tahun
                 FROM dbo.MNRSK_ProgressMonitoringProfileRisiko pm
                 WHERE pm.formulir_id = f.id
                 ORDER BY pm.tahun DESC, pm.id DESC
             ) latest_mon
+            {$where_dept}
             ORDER BY f.id DESC
         ";
         $q = $this->db->query($sql);

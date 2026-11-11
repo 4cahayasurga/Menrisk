@@ -264,7 +264,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Progress Monitoring
   <!-- CARD 1: INFORMASI PROFIL RISIKO ACUAN -->
   <div class="mon-card">
     <div class="mon-card-title">
-      <span>🎯</span> Profil Risiko yang Dimonitor
+      Profil Risiko yang Dimonitor
     </div>
     <p class="mon-card-desc">Informasi profil risiko dasar yang menjadi acuan pengisian progress monitoring berkala.</p>
 
@@ -311,7 +311,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Progress Monitoring
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 6px;">
       <div>
         <div class="mon-card-title">
-          <span>📋</span> Riwayat Progress Monitoring Profile Risiko
+          Riwayat Progress Monitoring Profile Risiko
         </div>
         <p class="mon-card-desc" style="margin-bottom: 0;">Catatan progres berkala per 3 bulan (Triwulan) / per bulan yang telah diinputkan untuk profil risiko ini.</p>
       </div>
@@ -363,24 +363,22 @@ $this->load->view('templates/header', ['title' => $title ?? 'Progress Monitoring
                 <td><?= nl2br(htmlspecialchars($m->status_progres_tindak_lanjut ?: '-')) ?></td>
                 <td><?= nl2br(htmlspecialchars($m->realisasi_biaya ?: '-')) ?></td>
                 <td><?= nl2br(htmlspecialchars($m->proses_tindak_lanjut_persen ?: '-')) ?></td>
-                <td><?= htmlspecialchars($m->persentase_per_risiko ?: '-') ?></td>
-                <td><strong><?= htmlspecialchars($m->eksposur_kuantitatif_current ? 'Rp ' . $m->eksposur_kuantitatif_current : '-') ?></strong></td>
-                <td>
+                <td class="text-center"><?= htmlspecialchars($m->persentase_per_risiko ?: '-') ?></td>
+                <td class="text-end"><strong><?= htmlspecialchars($m->eksposur_kuantitatif_current ? 'Rp ' . $m->eksposur_kuantitatif_current : '-') ?></strong></td>
+                <td class="text-center">
                   <?php if (!empty($m->skala_dampak_realisasi_current)): ?>
                     <span class="badge-skala badge-skala-<?= $m->skala_dampak_realisasi_current ?>">
                       <?= $m->skala_dampak_realisasi_current ?>
                     </span>
-                    <span style="font-size: 12px; font-weight: 600; margin-left: 4px;">Skala <?= $m->skala_dampak_realisasi_current ?></span>
                   <?php else: ?>
                     -
                   <?php endif; ?>
                 </td>
-                <td>
+                <td class="text-center">
                   <?php if (!empty($m->skala_probabilitas_realisasi_current)): ?>
                     <span class="badge-skala badge-skala-<?= $m->skala_probabilitas_realisasi_current ?>">
                       <?= $m->skala_probabilitas_realisasi_current ?>
                     </span>
-                    <span style="font-size: 12px; font-weight: 600; margin-left: 4px;">Skala <?= $m->skala_probabilitas_realisasi_current ?></span>
                   <?php else: ?>
                     -
                   <?php endif; ?>

@@ -54,7 +54,7 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
       <a href="<?= site_url('menrisk') ?>#mitigation" class="nav" style="text-decoration:none" title="Mitigation Monitor">
         <span class="nav-icon">✓</span> <span class="nav-label">Mitigation Monitor</span>
       </a>
-      <a href="<?= site_url('menrisk') ?>#kri" class="nav" style="text-decoration:none" title="Key Risk Indicators">
+      <a href="<?= site_url('menrisk/daftar_kri') ?>" class="nav <?= ($active_menu === 'kri' || $active_menu === 'daftar_kri') ? 'active' : '' ?>" style="text-decoration:none" title="Key Risk Indicators">
         <span class="nav-icon">⌁</span> <span class="nav-label">Key Risk Indicators</span>
       </a>
     <?php endif; ?>

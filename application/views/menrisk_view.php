@@ -249,6 +249,31 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           </div>
         </article>
       </section>
+
+      <!-- Grid Bottom Heatmap Baru: Profile Risiko Skala Rasio (Current) - Ukuran 1/2 -->
+      <section class="grid-main bottom">
+        <article class="panel heatmap-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Profile Risiko Heatmap (Current)</h2>
+              <p>Distribusi skala rasio (current) dari Progress Monitoring Daftar Profile Risiko · klik sel untuk melihat detail</p>
+            </div>
+            <span class="tag" id="tagProfileCurrentCount">0 RISIKO CURRENT</span>
+          </div>
+          <div class="heatmap-wrap">
+            <div class="axis-y">DAMPAK →</div>
+            <div class="profile-heatmap-grid" id="profileCurrentHeatmap"></div>
+            <div class="axis-x">KEMUNGKINAN →</div>
+          </div>
+          <div class="legend" style="flex-wrap: wrap; gap: 10px 14px;">
+            <span><i class="legend-i" style="background:#548235"></i>Low (1–5)</span>
+            <span><i class="legend-i" style="background:#a9d08e"></i>Low to Mod. (6–11)</span>
+            <span><i class="legend-i" style="background:#ffff00;border:1px solid #cbd5e1"></i>Moderate (12–15)</span>
+            <span><i class="legend-i" style="background:#f4b042"></i>Mod. to High (16–20)</span>
+            <span><i class="legend-i" style="background:#e52e20"></i>High (21–25)</span>
+          </div>
+        </article>
+      </section>
     </div>
 
     <!-- VIEW 2: RISK REGISTER -->
@@ -309,10 +334,18 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
     <!-- VIEW 4: KEY RISK INDICATORS -->
     <div id="kri" class="view">
       <section class="panel full">
-        <div class="panel-head">
+        <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h2>Key Risk Indicators (KRI)</h2>
-            <p>Early warning metrics dari SQL Server dbo.MNRSK_kri</p>
+            <p>Early warning metrics dan ambang batas toleransi risiko</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <a href="<?= site_url('menrisk/daftar_kri') ?>" class="ghost" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12.5px; font-weight:600;">
+              <span>📋</span> Buka Daftar KRI
+            </a>
+            <a href="<?= site_url('menrisk/tambah_kri') ?>" class="primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12.5px; font-weight:600;">
+              <span>+</span> Tambah KRI Baru
+            </a>
           </div>
         </div>
         <div class="kri-board" id="kriBoard">
@@ -492,9 +525,10 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
   <!-- Client-side Hydration & Interactions -->
   <script>
     // Data diinjeksikan langsung dari Controller CI3 & SQL Server
-    let allRisks = <?= json_encode($risks, JSON_UNESCAPED_UNICODE) ?>;
-    let allKri   = <?= json_encode($kri, JSON_UNESCAPED_UNICODE) ?>;
-    let kpis     = <?= json_encode($kpis, JSON_UNESCAPED_UNICODE) ?>;
+    let allRisks        = <?= json_encode($risks, JSON_UNESCAPED_UNICODE) ?>;
+    let allKri          = <?= json_encode($kri, JSON_UNESCAPED_UNICODE) ?>;
+    let kpis            = <?= json_encode($kpis, JSON_UNESCAPED_UNICODE) ?>;
+    let allProfilRisiko = <?= json_encode($profil_risiko_list ?? [], JSON_UNESCAPED_UNICODE) ?>;
 
     const colors = s => s >= 20 ? '#d93b45' : s >= 15 ? '#ed8351' : s >= 10 ? '#f3a62a' : s >= 5 ? '#d5bd3e' : '#1c9b68';
     const riskList = document.getElementById('topRisks');
@@ -579,6 +613,131 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
         const found = allRisks.filter(r => r.inherent == c.dataset.score);
         if (found.length) openRisk(found[0].id);
       });
+    }
+
+    /**
+     * Render Heatmap Baru: Profile Risiko Skala Rasio (Current) 5x5 (Skor 1 s/d 25)
+     * Sesuai urutan & warna matriks pada contoh-heatmap.png
+     */
+    function profileCurrentHeatmap(data = allProfilRisiko) {
+      const gridEl = document.getElementById('profileCurrentHeatmap');
+      if (!gridEl) return;
+
+      // Urutan angka matriks 5 baris x 5 kolom sesuai contoh-heatmap.png (dari baris atas ke bawah)
+      const matrixRows = [
+        [11, 16, 20, 23, 25],
+        [ 7, 12, 17, 21, 24],
+        [ 4,  8, 13, 18, 22],
+        [ 2,  5,  9, 14, 19],
+        [ 1,  3,  6, 10, 15]
+      ];
+
+      // Hitung total Profile Risiko yang telah memiliki data Progress Monitoring Current
+      const validCurrentList = (data || []).filter(p => parseInt(p.skala_risiko_current, 10) >= 1 && parseInt(p.skala_risiko_current, 10) <= 25);
+      const tagCountEl = document.getElementById('tagProfileCurrentCount');
+      if (tagCountEl) {
+        tagCountEl.textContent = validCurrentList.length + ' RISIKO CURRENT';
+      }
+
+      let html = '';
+      matrixRows.forEach(row => {
+        row.forEach(score => {
+          const matched = validCurrentList.filter(p => parseInt(p.skala_risiko_current, 10) === score);
+          const count = matched.length;
+
+          let colorClass = 'pcell-low';
+          let levelLabel = 'Low';
+          if (score >= 21) {
+            colorClass = 'pcell-high';
+            levelLabel = 'High';
+          } else if (score >= 16) {
+            colorClass = 'pcell-mod-high';
+            levelLabel = 'Moderate to High';
+          } else if (score >= 12) {
+            colorClass = 'pcell-moderate';
+            levelLabel = 'Moderate';
+          } else if (score >= 6) {
+            colorClass = 'pcell-low-mod';
+            levelLabel = 'Low to Moderate';
+          }
+
+          const hasDataClass = count > 0 ? 'has-data' : '';
+          const tooltipText = count > 0
+            ? `Skala ${score} (${levelLabel}) — ${count} Profile Risiko Current: ` + matched.map(m => m.nama_risiko || '-').join(', ')
+            : `Skala ${score} (${levelLabel}) — Belum ada risiko current`;
+
+          html += `
+            <div class="pcell ${colorClass} ${hasDataClass}" data-score="${score}" title="${tooltipText.replace(/"/g, '&quot;')}">
+              <span class="pcell-score">${score}</span>
+              ${count > 0 ? `<em>${count}</em>` : ''}
+            </div>
+          `;
+        });
+      });
+
+      gridEl.innerHTML = html;
+
+      gridEl.querySelectorAll('.pcell').forEach(cell => {
+        cell.onclick = () => {
+          const score = parseInt(cell.dataset.score, 10);
+          const matched = validCurrentList.filter(p => parseInt(p.skala_risiko_current, 10) === score);
+          openProfilCurrentModal(score, matched);
+        };
+      });
+    }
+
+    function openProfilCurrentModal(score, items) {
+      let levelInfo = { label: 'Low', bg: '#548235', text: '#fff' };
+      if (score >= 21) {
+        levelInfo = { label: 'High', bg: '#e52e20', text: '#fff' };
+      } else if (score >= 16) {
+        levelInfo = { label: 'Moderate to High', bg: '#f4b042', text: '#000' };
+      } else if (score >= 12) {
+        levelInfo = { label: 'Moderate', bg: '#ffff00', text: '#000' };
+      } else if (score >= 6) {
+        levelInfo = { label: 'Low to Moderate', bg: '#a9d08e', text: '#000' };
+      }
+
+      document.getElementById('modalTitle').innerHTML = `
+        Skala Risiko Current: <span style="display:inline-block;padding:2px 10px;border-radius:6px;background:${levelInfo.bg};color:${levelInfo.text};font-size:15px;">${score} · ${levelInfo.label}</span>
+      `;
+
+      if (!items || items.length === 0) {
+        document.getElementById('modalBody').innerHTML = `
+          <p style="color:var(--muted);margin-top:8px;">Belum ada Daftar Profile Risiko dengan nilai Progress Monitoring Skala Rasio (Current) pada angka <strong>${score}</strong>.</p>
+          <div style="margin-top:16px;">
+            <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="ghost" style="text-decoration:none;height:34px;font-size:12px;">Buka Daftar Profile Risiko →</a>
+          </div>
+        `;
+      } else {
+        const listHtml = items.map((item, idx) => `
+          <div style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
+              <strong style="color:var(--navy);font-size:13.5px;">${idx + 1}. ${item.nama_risiko || '-'}</strong>
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#0369a1;white-space:nowrap;">
+                ${(item.periode_current || '-') + ' ' + (item.tahun_current || '')}
+              </span>
+            </div>
+            <div class="detail-grid" style="margin-top:6px;margin-bottom:8px;">
+              <div><small>Department</small><strong>${item.department_name || '-'}</strong></div>
+              <div><small>Sasaran / Target</small><strong>${item.sasaran || '-'}</strong></div>
+              <div><small>Skala Inheren → Residual</small><strong>${item.skala_risiko_inheren || '-'} → ${item.skala_risiko_residual || '-'}</strong></div>
+              <div><small>Skala Current (D×P)</small><strong>${item.skala_risiko_current} (${item.skala_dampak_current || '-'}×${item.skala_probabilitas_current || '-'})</strong></div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <a href="<?= site_url('menrisk/profil_risiko/') ?>${item.id}?mode=view" class="ghost" style="height:30px;padding:0 10px;font-size:11.5px;text-decoration:none;">👁 Detail Profil</a>
+              <a href="<?= site_url('menrisk/monitoring_profil_risiko/') ?>${item.id}" class="primary" style="height:30px;padding:0 12px;font-size:11.5px;text-decoration:none;margin-left:0;">📊 Progress Monitoring</a>
+            </div>
+          </div>
+        `).join('');
+
+        document.getElementById('modalBody').innerHTML = `
+          <p style="margin-bottom:10px;font-size:12.5px;color:var(--muted);">Terdapat <strong>${items.length}</strong> Profile Risiko pada skala rasio current <strong>${score}</strong>:</p>
+          <div style="max-height:360px;overflow-y:auto;padding-right:4px;">${listHtml}</div>
+        `;
+      }
+
+      document.getElementById('modal').classList.add('show');
     }
 
     function trend() {
@@ -748,6 +907,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
                   allRisks = dashData.data.risks;
                   allKri   = dashData.data.kri;
                   kpis     = dashData.data.kpis;
+                  if (dashData.data.profil_risiko) {
+                    allProfilRisiko = dashData.data.profil_risiko;
+                  }
 
                   // Update KPI UI
                   const elTotal = document.getElementById('totalRisk');
@@ -759,6 +921,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
                   applyFilter();
                   heatmap();
+                  profileCurrentHeatmap();
                   changeView('register');
                 }
               });
@@ -792,6 +955,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
       const fkri = allKri.filter(k => (d === 'all' || k.directorate === d || String(k.department_id) === String(d)));
       renderKri(fkri);
+
+      const fProfil = (allProfilRisiko || []).filter(p => (d === 'all' || p.department_name === d || String(p.department_id) === String(d)));
+      profileCurrentHeatmap(fProfil);
     }
 
     const deptFilter = document.getElementById('department') || document.getElementById('directorate');
@@ -814,6 +980,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
     // Inisialisasi awal
     heatmap();
+    profileCurrentHeatmap();
     trend();
     renderTop();
     renderTable();
