@@ -57,13 +57,27 @@ class FormulirRisiko_model extends CI_Model {
                 t1.kontrol_saat_ini,
                 t1.efektifitas_kontrol,
                 t1.periode_terpapar,
+                t2.eksposure_kuantitatif,
+                t2.skala_dampak_inheren,
+                t2.skala_probabilitas,
                 t2.skala_risiko_inheren,
+                t3.kegiatan_mitigasi,
+                t3.pic,
+                t3.target_waktu,
+                t4.eksposure_residual,
+                t4.skala_dampak_residual,
+                t4.skala_kemungkinan_residual,
                 t4.skala_risiko_residual,
                 latest_mon.skala_risiko_realisasi AS skala_risiko_current,
                 latest_mon.skala_dampak_realisasi_current AS skala_dampak_current,
                 latest_mon.skala_probabilitas_realisasi_current AS skala_probabilitas_current,
                 latest_mon.eksposur_kuantitatif_current,
                 latest_mon.status_progres_tindak_lanjut,
+                latest_mon.proses_tindak_lanjut_persen,
+                latest_mon.persentase_per_risiko,
+                latest_mon.realisasi_biaya,
+                latest_mon.kendala,
+                latest_mon.action_plan,
                 latest_mon.periode AS periode_current,
                 latest_mon.tahun AS tahun_current
             FROM dbo.MNRSK_FormulirRisiko f
@@ -73,6 +87,7 @@ class FormulirRisiko_model extends CI_Model {
             LEFT JOIN dbo.MNRSK_SumberRisiko sr ON sr.id = t1.sumber_risiko
             LEFT JOIN dbo.MNRSK_FaktorRisiko fr ON fr.id = t1.faktor_sumber
             LEFT JOIN dbo.MNRSK_KuantifikasiRisikoInheren t2 ON t2.formulir_id = f.id
+            LEFT JOIN dbo.MNRSK_RencanaPerlakuanRisiko t3 ON t3.formulir_id = f.id
             LEFT JOIN dbo.MNRSK_KuantifikasiRisikoResidual t4 ON t4.formulir_id = f.id
             OUTER APPLY (
                 SELECT TOP 1 
@@ -81,6 +96,11 @@ class FormulirRisiko_model extends CI_Model {
                     pm.skala_probabilitas_realisasi_current,
                     pm.eksposur_kuantitatif_current,
                     pm.status_progres_tindak_lanjut,
+                    pm.proses_tindak_lanjut_persen,
+                    pm.persentase_per_risiko,
+                    pm.realisasi_biaya,
+                    pm.kendala,
+                    pm.action_plan,
                     pm.periode,
                     pm.tahun
                 FROM dbo.MNRSK_ProgressMonitoringProfileRisiko pm

@@ -134,21 +134,22 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
         <article class="panel heatmap-panel">
           <div class="panel-head">
             <div>
-              <h2>Enterprise Risk Heatmap</h2>
-              <p>Distribusi inherent risk · klik sel untuk melihat risiko</p>
+              <h2>Profile Risiko Heatmap (Current)</h2>
+              <p>Distribusi skala rasio (current) dari Progress Monitoring Daftar Profile Risiko · klik sel untuk melihat detail</p>
             </div>
-            <span class="tag">LIKELIHOOD × IMPACT</span>
+            <span class="tag" id="tagProfileCurrentCount">0 RISIKO CURRENT</span>
           </div>
           <div class="heatmap-wrap">
-            <div class="axis-y">DAMPAK →</div>
-            <div class="heatmap" id="heatmap"></div>
-            <div class="axis-x">KEMUNGKINAN →</div>
+            <!-- <div class="axis-y">DAMPAK →</div> -->
+            <div class="profile-heatmap-grid" id="profileCurrentHeatmap"></div>
+            <!-- <div class="axis-x">KEMUNGKINAN →</div> -->
           </div>
-          <div class="legend">
-            <span><i class="legend-i low" style="background:#cce9db"></i>Rendah</span>
-            <span><i class="legend-i moderate" style="background:#fbe9ac"></i>Moderat</span>
-            <span><i class="legend-i high" style="background:#f5bc72"></i>Tinggi</span>
-            <span><i class="legend-i extreme" style="background:#eb7478"></i>Ekstrem</span>
+          <div class="legend" style="flex-wrap: wrap; gap: 10px 14px;">
+            <span><i class="legend-i" style="background:#548235"></i>Low (1–5)</span>
+            <span><i class="legend-i" style="background:#a9d08e"></i>Low to Mod. (6–11)</span>
+            <span><i class="legend-i" style="background:#ffff00;border:1px solid #cbd5e1"></i>Moderate (12–15)</span>
+            <span><i class="legend-i" style="background:#f4b042"></i>Mod. to High (16–20)</span>
+            <span><i class="legend-i" style="background:#e52e20"></i>High (21–25)</span>
           </div>
         </article>
 
@@ -249,31 +250,6 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           </div>
         </article>
       </section>
-
-      <!-- Grid Bottom Heatmap Baru: Profile Risiko Skala Rasio (Current) - Ukuran 1/2 -->
-      <section class="grid-main bottom">
-        <article class="panel heatmap-panel">
-          <div class="panel-head">
-            <div>
-              <h2>Profile Risiko Heatmap (Current)</h2>
-              <p>Distribusi skala rasio (current) dari Progress Monitoring Daftar Profile Risiko · klik sel untuk melihat detail</p>
-            </div>
-            <span class="tag" id="tagProfileCurrentCount">0 RISIKO CURRENT</span>
-          </div>
-          <div class="heatmap-wrap">
-            <div class="axis-y">DAMPAK →</div>
-            <div class="profile-heatmap-grid" id="profileCurrentHeatmap"></div>
-            <div class="axis-x">KEMUNGKINAN →</div>
-          </div>
-          <div class="legend" style="flex-wrap: wrap; gap: 10px 14px;">
-            <span><i class="legend-i" style="background:#548235"></i>Low (1–5)</span>
-            <span><i class="legend-i" style="background:#a9d08e"></i>Low to Mod. (6–11)</span>
-            <span><i class="legend-i" style="background:#ffff00;border:1px solid #cbd5e1"></i>Moderate (12–15)</span>
-            <span><i class="legend-i" style="background:#f4b042"></i>Mod. to High (16–20)</span>
-            <span><i class="legend-i" style="background:#e52e20"></i>High (21–25)</span>
-          </div>
-        </article>
-      </section>
     </div>
 
     <!-- VIEW 2: RISK REGISTER -->
@@ -357,9 +333,9 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
 
   <!-- Risk Detail Modal -->
   <div class="modal" id="modal">
-    <div class="modal-card">
+    <div class="modal-card" id="modalCard">
       <button class="close" id="closeModal">×</button>
-      <p class="eyebrow">RISK DETAIL</p>
+      <p class="eyebrow" id="modalEyebrow">RISK DETAIL</p>
       <h2 id="modalTitle"></h2>
       <div id="modalBody"></div>
     </div>
@@ -605,14 +581,115 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
           const score = imp * lik,
                 count = allRisks.filter(r => r.inherent === score).length,
                 cl = score >= 15 ? 'extreme' : score >= 10 ? 'high' : score >= 5 ? 'moderate' : 'low';
-          html += `<div class="cell ${cl}" data-score="${score}" title="Skor ${score}">${count ? `<em>${count}</em>` : ''}</div>`;
+          html += `<div class="cell ${cl}" data-score="${score}" data-imp="${imp}" data-lik="${lik}" title="Skor ${score} (Dampak ${imp} × Kemungkinan ${lik})">${count ? `<em>${count}</em>` : ''}</div>`;
         }
       }
       h.innerHTML = html;
       h.querySelectorAll('.cell').forEach(c => c.onclick = () => {
-        const found = allRisks.filter(r => r.inherent == c.dataset.score);
-        if (found.length) openRisk(found[0].id);
+        const score = parseInt(c.dataset.score, 10);
+        const imp   = parseInt(c.dataset.imp, 10);
+        const lik   = parseInt(c.dataset.lik, 10);
+        const found = allRisks.filter(r => parseInt(r.inherent, 10) === score);
+        openEnterpriseHeatmapModal(score, imp, lik, found);
       });
+    }
+
+    function openEnterpriseHeatmapModal(score, imp, lik, items) {
+      const modalCard = document.getElementById('modalCard');
+      const modalEyebrow = document.getElementById('modalEyebrow');
+      if (modalCard) modalCard.classList.add('modal-card-wide');
+      if (modalEyebrow) modalEyebrow.textContent = 'ENTERPRISE RISK HEATMAP · INHERENT RISK';
+
+      const levelLabel = score >= 15 ? 'Ekstrem' : score >= 10 ? 'Tinggi' : score >= 5 ? 'Moderat' : 'Rendah';
+      const levelBg    = score >= 15 ? '#eb7478' : score >= 10 ? '#f5bc72' : score >= 5 ? '#fbe9ac' : '#cce9db';
+      const levelText  = score >= 15 ? '#ffffff' : '#17243a';
+
+      document.getElementById('modalTitle').textContent = 'Detail Distribusi Enterprise Risk';
+
+      const summaryHtml = `
+        <div class="hm-modal-summary">
+          <div class="hm-score-box" style="background:${levelBg};color:${levelText};">
+            ${score}
+          </div>
+          <div class="hm-summary-meta">
+            <strong>Tingkat Risiko: ${levelLabel} (Skor Inherent ${score})</strong>
+            <span>Matriks: Dampak Skala ${imp} × Kemungkinan Skala ${lik}</span>
+          </div>
+          <div class="hm-summary-count">
+            <b>${items ? items.length : 0}</b>
+            <small>Risiko</small>
+          </div>
+        </div>
+      `;
+
+      if (!items || items.length === 0) {
+        document.getElementById('modalBody').innerHTML = `
+          ${summaryHtml}
+          <div style="text-align:center;padding:24px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;">
+            <p style="color:var(--muted);font-size:13px;">Belum ada risiko aktif dengan skor inherent <strong>${score}</strong> pada sel ini.</p>
+          </div>
+        `;
+      } else {
+        const listHtml = items.map((r, idx) => `
+          <div class="hm-risk-card">
+            <div class="hm-risk-head">
+              <div class="hm-risk-title-wrap">
+                <span class="hm-risk-num">${idx + 1}</span>
+                <div>
+                  <div class="hm-risk-title">${r.title}</div>
+                  <div class="hm-risk-subchips">
+                    <span class="hm-chip"><b>${r.id}</b></span>
+                    <span class="hm-chip dept">🏢 ${r.dir || '-'}</span>
+                    <span class="hm-chip">🏷️ ${r.cat || '-'}</span>
+                    <span class="hm-chip">👤 ${r.owner || '-'}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="status ${r.appetite === 'Melebihi' ? 'critical' : r.appetite === 'Mendekati' ? 'warning' : ''}" style="font-size:10px;padding:4px 8px;">
+                ${r.appetite || 'Dalam'} Appetite
+              </span>
+            </div>
+
+            <div class="hm-info-grid">
+              <div class="hm-info-item">
+                <small>Skor Inherent → Residual</small>
+                <p>
+                  <span class="hm-mini-score" style="background:${colors(r.inherent)};color:#fff;">Inherent: ${r.inherent}</span>
+                  <span style="margin:0 4px;color:#64748b;">→</span>
+                  <span class="hm-mini-score" style="background:${colors(r.residual)};color:#fff;">Residual: ${r.residual}</span>
+                </p>
+              </div>
+              <div class="hm-info-item">
+                <small>Progres Mitigasi &amp; Target</small>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+                  <div class="progress" style="flex:1;margin-top:0 !important;height:6px !important;">
+                    <span style="width:${r.progress}%;background:${r.progress < 60 ? '#d93b45' : r.progress < 75 ? '#f3a62a' : '#1c9b68'} !important;"></span>
+                  </div>
+                  <strong style="font-size:11px;color:var(--navy);">${r.progress}%</strong>
+                </div>
+                <span style="display:block;font-size:11px;color:#64748b;margin-top:3px;">Target Selesai: <b>${r.due || '-'}</b></span>
+              </div>
+              <div class="hm-info-item" style="grid-column: 1 / -1;">
+                <small>Rencana Mitigasi (Treatment Plan)</small>
+                <p>${r.mitigation || '-'}</p>
+              </div>
+            </div>
+
+            ${r.decision ? `
+              <div class="hm-note-box" style="background:#fff3f2;border-color:#fecaca;color:#991b1b;">
+                <strong>⚑ Keputusan yang dibutuhkan dari BOD:</strong> ${r.decision}
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+
+        document.getElementById('modalBody').innerHTML = `
+          ${summaryHtml}
+          <div class="hm-risk-list-scroll">${listHtml}</div>
+        `;
+      }
+
+      document.getElementById('modal').classList.add('show');
     }
 
     /**
@@ -624,12 +701,19 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       if (!gridEl) return;
 
       // Urutan angka matriks 5 baris x 5 kolom sesuai contoh-heatmap.png (dari baris atas ke bawah)
+      // const matrixRows = [
+      //   [11, 16, 20, 23, 25],
+      //   [ 7, 12, 17, 21, 24],
+      //   [ 4,  8, 13, 18, 22],
+      //   [ 2,  5,  9, 14, 19],
+      //   [ 1,  3,  6, 10, 15]
+      // ];
       const matrixRows = [
         [11, 16, 20, 23, 25],
         [ 7, 12, 17, 21, 24],
         [ 4,  8, 13, 18, 22],
-        [ 2,  5,  9, 14, 19],
-        [ 1,  3,  6, 10, 15]
+        [ 2,  6,  9, 14, 19],
+        [ 1,  3,  5, 10, 15]
       ];
 
       // Hitung total Profile Risiko yang telah memiliki data Progress Monitoring Current
@@ -686,54 +770,146 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
       });
     }
 
-    function openProfilCurrentModal(score, items) {
-      let levelInfo = { label: 'Low', bg: '#548235', text: '#fff' };
-      if (score >= 21) {
-        levelInfo = { label: 'High', bg: '#e52e20', text: '#fff' };
-      } else if (score >= 16) {
-        levelInfo = { label: 'Moderate to High', bg: '#f4b042', text: '#000' };
-      } else if (score >= 12) {
-        levelInfo = { label: 'Moderate', bg: '#ffff00', text: '#000' };
-      } else if (score >= 6) {
-        levelInfo = { label: 'Low to Moderate', bg: '#a9d08e', text: '#000' };
-      }
+    function getProfileScaleMeta(score) {
+      const s = parseInt(score, 10) || 0;
+      if (s >= 21) return { label: 'High', bg: '#e52e20', text: '#ffffff', desc: 'Risiko sangat tinggi / kritis — memerlukan tindakan mitigasi prioritas segera.' };
+      if (s >= 16) return { label: 'Moderate to High', bg: '#f4b042', text: '#17243a', desc: 'Risiko menengah ke tinggi — memerlukan pemantauan intensif dan pengendalian.' };
+      if (s >= 12) return { label: 'Moderate', bg: '#ffff00', text: '#17243a', desc: 'Risiko moderat — perlu tindak lanjut sesuai rencana mitigasi berkala.' };
+      if (s >= 6)  return { label: 'Low to Moderate', bg: '#a9d08e', text: '#17243a', desc: 'Risiko rendah ke moderat — kondisi cukup terkendali dengan pengawasan rutin.' };
+      if (s >= 1)  return { label: 'Low', bg: '#548235', text: '#ffffff', desc: 'Risiko rendah — berada dalam batas aman operasional.' };
+      return { label: '-', bg: '#e2e8f0', text: '#64748b', desc: '' };
+    }
 
-      document.getElementById('modalTitle').innerHTML = `
-        Skala Risiko Current: <span style="display:inline-block;padding:2px 10px;border-radius:6px;background:${levelInfo.bg};color:${levelInfo.text};font-size:15px;">${score} · ${levelInfo.label}</span>
+    function openProfilCurrentModal(score, items) {
+      const modalCard = document.getElementById('modalCard');
+      const modalEyebrow = document.getElementById('modalEyebrow');
+      if (modalCard) modalCard.classList.add('modal-card-wide');
+      if (modalEyebrow) modalEyebrow.textContent = 'PROFILE RISIKO · PROGRESS MONITORING CURRENT';
+
+      // Cari koordinat Dampak & Kemungkinan pada matriks 5x5 sesuai contoh-heatmap.png
+      const matrixRows = [
+        [11, 16, 20, 23, 25],
+        [ 7, 12, 17, 21, 24],
+        [ 4,  8, 13, 18, 22],
+        [ 2,  5,  9, 14, 19],
+        [ 1,  3,  6, 10, 15]
+      ];
+      let coordDampak = '-', coordProb = '-';
+      matrixRows.forEach((row, rIdx) => {
+        const cIdx = row.indexOf(score);
+        if (cIdx !== -1) {
+          coordDampak = 5 - rIdx;
+          coordProb   = cIdx + 1;
+        }
+      });
+
+      const levelInfo = getProfileScaleMeta(score);
+
+      document.getElementById('modalTitle').textContent = 'Detail Distribusi Profile Risiko (Current)';
+
+      const summaryHtml = `
+        <div class="hm-modal-summary">
+          <div class="hm-score-box" style="background:${levelInfo.bg};color:${levelInfo.text};">
+            ${score}
+          </div>
+          <div class="hm-summary-meta">
+            <strong>Level Risiko: ${levelInfo.label} (Skala ${score} / 25)</strong>
+            <span>Matriks: Skala Dampak ${coordDampak} × Skala Kemungkinan ${coordProb} · ${levelInfo.desc}</span>
+          </div>
+          <div class="hm-summary-count">
+            <b>${items ? items.length : 0}</b>
+            <small>Risiko</small>
+          </div>
+        </div>
       `;
 
       if (!items || items.length === 0) {
         document.getElementById('modalBody').innerHTML = `
-          <p style="color:var(--muted);margin-top:8px;">Belum ada Daftar Profile Risiko dengan nilai Progress Monitoring Skala Rasio (Current) pada angka <strong>${score}</strong>.</p>
-          <div style="margin-top:16px;">
-            <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="ghost" style="text-decoration:none;height:34px;font-size:12px;">Buka Daftar Profile Risiko →</a>
+          ${summaryHtml}
+          <div style="text-align:center;padding:24px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">
+              Belum ada Daftar Profile Risiko dengan nilai Progress Monitoring Skala Rasio (Current) pada angka <strong>${score} (${levelInfo.label})</strong>.
+            </p>
+            <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="ghost" style="text-decoration:none;height:34px;font-size:12px;">
+              📋 Buka Daftar Profile Risiko →
+            </a>
           </div>
         `;
       } else {
-        const listHtml = items.map((item, idx) => `
-          <div style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
-              <strong style="color:var(--navy);font-size:13.5px;">${idx + 1}. ${item.nama_risiko || '-'}</strong>
-              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#0369a1;white-space:nowrap;">
-                ${(item.periode_current || '-') + ' ' + (item.tahun_current || '')}
-              </span>
+        const listHtml = items.map((item, idx) => {
+          const inhMeta = getProfileScaleMeta(item.skala_risiko_inheren);
+          const resMeta = getProfileScaleMeta(item.skala_risiko_residual);
+          const curMeta = getProfileScaleMeta(item.skala_risiko_current);
+
+          return `
+            <div class="hm-risk-card">
+              <!-- Card Header -->
+              <div class="hm-risk-head">
+                <div class="hm-risk-title-wrap">
+                  <span class="hm-risk-num">${idx + 1}</span>
+                  <div>
+                    <div class="hm-risk-title">${item.nama_risiko || '-'}</div>
+                    <div class="hm-risk-subchips">
+                      <span class="hm-chip dept">🏢 ${item.department_name || 'Tanpa Department'}</span>
+                      ${item.kategori_risiko ? `<span class="hm-chip">🏷️ ${item.kategori_risiko}${item.kategori_risiko_nama ? ' - ' + item.kategori_risiko_nama : ''}</span>` : ''}
+                      ${item.fungsi_kerja ? `<span class="hm-chip">⚙️ ${item.fungsi_kerja}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+                <span class="hm-chip period" title="Periode Progress Monitoring Terakhir">
+                  📅 ${(item.periode_current || '-') + ' ' + (item.tahun_current || '')}
+                </span>
+              </div>
+
+              <!-- 3-Column Score Progression Strip -->
+              <div class="hm-score-strip" style="border-bottom: none;">
+                <div class="hm-score-step">
+                  <small>1. Risiko Inheren</small>
+                  <div class="hm-score-badge-row">
+                    <span class="hm-mini-score" style="background:${inhMeta.bg};color:${inhMeta.text};">
+                      ${item.skala_risiko_inheren || '-'} · ${inhMeta.label}
+                    </span>
+                  </div>
+                  <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_kuantitatif || '0'}</span>
+                </div>
+
+                <div class="hm-score-step">
+                  <small>2. Target Residual</small>
+                  <div class="hm-score-badge-row">
+                    <span class="hm-mini-score" style="background:${resMeta.bg};color:${resMeta.text};">
+                      ${item.skala_risiko_residual || '-'} · ${resMeta.label}
+                    </span>
+                  </div>
+                  <span class="hm-exp-val">Eksposur: Rp ${item.eksposure_residual || '0'}</span>
+                </div>
+
+                <div class="hm-score-step active-step">
+                  <small>3. Realisasi Current</small>
+                  <div class="hm-score-badge-row">
+                    <span class="hm-mini-score" style="background:${curMeta.bg};color:${curMeta.text};">
+                      ${item.skala_risiko_current} · ${curMeta.label}
+                    </span>
+                  </div>
+                  <span class="hm-exp-val" style="color:#0f172a;">Eksposur: Rp ${item.eksposur_kuantitatif_current || '0'}</span>
+                </div>
+              </div>
+
+              <!-- Card Footer -->
+              <div class="hm-card-foot" style="justify-content: flex-end;">
+                <a href="<?= site_url('menrisk/profil_risiko/') ?>${item.id}?mode=view" class="ghost" style="height:31px;padding:0 11px;font-size:11.5px;text-decoration:none;">
+                  👁 Detail Formulir
+                </a>
+                <a href="<?= site_url('menrisk/monitoring_profil_risiko/') ?>${item.id}" class="primary" style="height:31px;padding:0 12px;font-size:11.5px;text-decoration:none;margin-left:0;">
+                  📊 Progress Monitoring
+                </a>
+              </div>
             </div>
-            <div class="detail-grid" style="margin-top:6px;margin-bottom:8px;">
-              <div><small>Department</small><strong>${item.department_name || '-'}</strong></div>
-              <div><small>Sasaran / Target</small><strong>${item.sasaran || '-'}</strong></div>
-              <div><small>Skala Inheren → Residual</small><strong>${item.skala_risiko_inheren || '-'} → ${item.skala_risiko_residual || '-'}</strong></div>
-              <div><small>Skala Current (D×P)</small><strong>${item.skala_risiko_current} (${item.skala_dampak_current || '-'}×${item.skala_probabilitas_current || '-'})</strong></div>
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <a href="<?= site_url('menrisk/profil_risiko/') ?>${item.id}?mode=view" class="ghost" style="height:30px;padding:0 10px;font-size:11.5px;text-decoration:none;">👁 Detail Profil</a>
-              <a href="<?= site_url('menrisk/monitoring_profil_risiko/') ?>${item.id}" class="primary" style="height:30px;padding:0 12px;font-size:11.5px;text-decoration:none;margin-left:0;">📊 Progress Monitoring</a>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         document.getElementById('modalBody').innerHTML = `
-          <p style="margin-bottom:10px;font-size:12.5px;color:var(--muted);">Terdapat <strong>${items.length}</strong> Profile Risiko pada skala rasio current <strong>${score}</strong>:</p>
-          <div style="max-height:360px;overflow-y:auto;padding-right:4px;">${listHtml}</div>
+          ${summaryHtml}
+          <div class="hm-risk-list-scroll">${listHtml}</div>
         `;
       }
 
@@ -762,6 +938,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'IFPRO Risk Command 
     function openRisk(id) {
       const r = allRisks.find(x => x.id === id);
       if (!r) return;
+      const modalCard = document.getElementById('modalCard');
+      const modalEyebrow = document.getElementById('modalEyebrow');
+      if (modalCard) modalCard.classList.remove('modal-card-wide');
+      if (modalEyebrow) modalEyebrow.textContent = 'RISK DETAIL';
+
       document.getElementById('modalTitle').textContent = r.title;
       document.getElementById('modalBody').innerHTML = `
         <p>${r.mitigation}</p>
