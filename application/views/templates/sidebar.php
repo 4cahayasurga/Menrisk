@@ -31,7 +31,7 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
   </div>
   
   <nav>
-    <?php if ($is_dashboard): ?>
+    <!-- <?php if ($is_dashboard): ?>
       <button class="nav <?= ($active_menu === 'overview') ? 'active' : '' ?>" data-view="overview" title="Executive Overview">
         <span class="nav-icon">◫</span> <span class="nav-label">Executive Overview</span>
       </button>
@@ -57,10 +57,16 @@ $user_level = $current_user['level'] ?? $ci->session->userdata('level') ?? 'user
       <a href="<?= site_url('menrisk/daftar_kri') ?>" class="nav <?= ($active_menu === 'kri' || $active_menu === 'daftar_kri') ? 'active' : '' ?>" style="text-decoration:none" title="Key Risk Indicators">
         <span class="nav-icon">⌁</span> <span class="nav-label">Key Risk Indicators</span>
       </a>
-    <?php endif; ?>
+    <?php endif; ?> -->
 
+    <a href="<?= site_url('menrisk') ?>" class="nav" style="text-decoration:none" title="Executive Overview">
+      <span class="nav-icon">◫</span> <span class="nav-label">Executive Overview</span>
+    </a>
     <a href="<?= site_url('menrisk/daftar_profil_risiko') ?>" class="nav <?= ($active_menu === 'daftar_profil_risiko') ? 'active' : '' ?>" style="text-decoration:none" title="Profile Risiko">
       <span class="nav-icon">≣</span> <span class="nav-label">Profile Risiko</span>
+    </a>
+    <a href="<?= site_url('menrisk/daftar_kri') ?>" class="nav <?= ($active_menu === 'kri' || $active_menu === 'daftar_kri') ? 'active' : '' ?>" style="text-decoration:none" title="Key Risk Indicators">
+      <span class="nav-icon">⌁</span> <span class="nav-label">Key Risk Indicators</span>
     </a>
 
     <!-- MENU MASTER DATA -->
