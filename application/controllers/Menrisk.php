@@ -442,18 +442,37 @@ class Menrisk extends CI_Controller {
      */
     public function daftar_profil_risiko() {
         $this->load->model('FormulirRisiko_model');
+        $this->load->model('Department_model');
+        $this->load->model('User_model');
 
-        $formulir_list = $this->FormulirRisiko_model->get_all_formulir();
+        // Identifikasi hak akses pengguna yang sedang login
+        $user_id   = trim((string)$this->session->userdata('user_id'));
+        $user_role = $this->session->userdata('level'); // 'admin' atau 'user'
+
+        $allowed_dept_ids = null;
+        $departments_filter = [];
+
+        if ($user_role === 'admin') {
+            $departments_filter = $this->Department_model->get_all();
+            $allowed_dept_ids   = null;
+        } else {
+            $user_depts         = $this->User_model->get_departments_by_user_id($user_id);
+            $departments_filter = $user_depts;
+            $allowed_dept_ids   = array_map('intval', array_column($user_depts, 'id'));
+        }
+
+        $formulir_list = $this->FormulirRisiko_model->get_all_formulir($allowed_dept_ids);
 
         $data = [
-            'title'         => 'Daftar Profile Risiko — IFPRO Risk Command Center',
-            'current_user'  => [
+            'title'              => 'Daftar Profile Risiko — IFPRO Risk Command Center',
+            'current_user'       => [
                 'nama'  => $this->session->userdata('nama'),
                 'level' => $this->session->userdata('level')
             ],
-            'active_menu'   => 'daftar_profil_risiko',
-            'is_dashboard'  => false,
-            'formulir_list' => $formulir_list
+            'active_menu'        => 'daftar_profil_risiko',
+            'is_dashboard'       => false,
+            'departments_filter' => $departments_filter,
+            'formulir_list'      => $formulir_list
         ];
 
         $this->load->view('daftar_profil_risiko_view', $data);

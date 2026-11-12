@@ -23,7 +23,7 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
   margin-bottom: 16px;
 }
 .search-input-box {
-  min-width: 280px;
+  min-width: 260px;
   padding: 9px 14px;
   font-size: 13px;
   border: 1px solid #cbd5e1;
@@ -31,6 +31,22 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
   outline: none;
 }
 .search-input-box:focus {
+  border-color: var(--teal, #00a89d);
+  box-shadow: 0 0 0 3px rgba(0, 168, 157, 0.15);
+}
+.filter-select-box {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 9px 14px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  cursor: pointer;
+}
+.filter-select-box:focus {
   border-color: var(--teal, #00a89d);
   box-shadow: 0 0 0 3px rgba(0, 168, 157, 0.15);
 }
@@ -188,7 +204,19 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
           Menampilkan informasi Sasaran/Target, Fungsi Kerja, serta data Identifikasi Risiko (Tab 1).
         </p>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <select id="filterDepartment" class="filter-select-box">
+          <option value="all">Semua Department</option>
+          <?php if (!empty($departments_filter)): ?>
+            <?php foreach ($departments_filter as $dept): ?>
+              <?php 
+                $deptId   = is_array($dept) ? ($dept['id'] ?? '') : ($dept->id ?? '');
+                $deptName = is_array($dept) ? ($dept['d_3_name'] ?? $dept['name'] ?? '') : ($dept->d_3_name ?? $dept->name ?? '');
+              ?>
+              <option value="<?= htmlspecialchars($deptId) ?>"><?= htmlspecialchars($deptName) ?></option>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </select>
         <input type="text" id="searchProfilInput" class="search-input-box" placeholder="Cari sasaran, fungsi kerja, nama risiko..." />
       </div>
     </div>
@@ -224,8 +252,8 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                     $efClass = 'efektif';
                 }
               ?>
-              <tr class="profil-row">
-                <td style="text-align: center; font-weight: 700; color: #64748b;"><?= $idx + 1 ?></td>
+              <tr class="profil-row" data-department-id="<?= htmlspecialchars($row->department_id ?? '') ?>" data-department-name="<?= htmlspecialchars(strtolower($row->department_name ?? '')) ?>">
+                <td class="row-number" style="text-align: center; font-weight: 700; color: #64748b;"><?= $idx + 1 ?></td>
                 <td style="text-align: center;">
                   <div class="action-btn-group">
                     <a href="<?= site_url('menrisk/monitoring_profil_risiko/' . (int)$row->id) ?>" class="btn-act btn-act-monitoring" title="Progress Monitoring Profile Risiko">
@@ -326,6 +354,11 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
                 </td>
               </tr>
             <?php endforeach; ?>
+            <tr id="emptyProfilRow" style="display: none;">
+              <td colspan="11" style="text-align: center; padding: 36px 16px; color: #64748b;">
+                Tidak ada data Profile Risiko yang sesuai dengan filter yang dipilih.
+              </td>
+            </tr>
           <?php else: ?>
             <tr id="emptyProfilRow">
               <td colspan="11" style="text-align: center; padding: 36px 16px; color: #64748b;">
@@ -341,13 +374,38 @@ $this->load->view('templates/header', ['title' => $title ?? 'Daftar Profile Risi
 
 <script>
   $(function() {
-    $('#searchProfilInput').on('input', function() {
-      const q = $.trim($(this).val()).toLowerCase();
+    function filterTabelProfil() {
+      const q = $.trim($('#searchProfilInput').val()).toLowerCase();
+      const selDept = $.trim($('#filterDepartment').val());
+      let visibleCount = 0;
+
       $('#tableDaftarProfil tbody tr.profil-row').each(function() {
+        const rowDeptId = String($(this).data('department-id') || '');
         const text = $(this).text().toLowerCase();
-        $(this).toggle(text.indexOf(q) !== -1);
+
+        const matchSearch = (q === '' || text.indexOf(q) !== -1);
+        const matchDept = (selDept === 'all' || selDept === '' || rowDeptId === selDept);
+
+        if (matchSearch && matchDept) {
+          visibleCount++;
+          $(this).show();
+          $(this).find('.row-number').text(visibleCount);
+        } else {
+          $(this).hide();
+        }
       });
-    });
+
+      if ($('#tableDaftarProfil tbody tr.profil-row').length > 0) {
+        if (visibleCount === 0) {
+          $('#emptyProfilRow').show();
+        } else {
+          $('#emptyProfilRow').hide();
+        }
+      }
+    }
+
+    $('#searchProfilInput').on('input', filterTabelProfil);
+    $('#filterDepartment').on('change', filterTabelProfil);
   });
 </script>
 
